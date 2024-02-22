@@ -7,66 +7,10 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 	"github.com/tidwall/gjson"
 	"gov.gsa.fac.backups/internal/logging"
 )
-
-var test_json = `{
-    "s3": [],
-    "user-provided": [],
-    "aws-rds": [
-        {
-            "label": "aws-rds",
-            "provider": null,
-            "plan": "medium-gp-psql",
-            "name": "fac-db",
-            "tags": [
-                "database",
-                "RDS"
-            ],
-            "instance_guid": "source-guid",
-            "instance_name": "fac-db",
-            "binding_guid": "source-binding-guid",
-            "binding_name": null,
-            "credentials": {
-                "db_name": "the-source-db-name",
-                "host": "the-source-db.us-gov-west-1.rds.amazonaws.com",
-                "name": "the-source-name",
-                "password": "the-source-password",
-                "port": "54321",
-                "uri": "the-source-uri",
-                "username": "source-username"
-            },
-            "syslog_drain_url": null,
-            "volume_mounts": []
-        },
-        {
-            "label": "aws-rds",
-            "provider": null,
-            "plan": "medium-gp-psql",
-            "name": "fac-snapshot-db",
-            "tags": [
-                "database",
-                "RDS"
-            ],
-            "instance_guid": "dest-instance-guid",
-            "instance_name": "fac-db",
-            "binding_guid": "dest-binding-guid",
-            "binding_name": null,
-            "credentials": {
-                "db_name": "the-dest-db-name",
-                "host": "the-dest-db.us-gov-west-1.rds.amazonaws.com",
-                "name": "the-dest-name",
-                "password": "the-dest-password",
-                "port": "65432",
-                "uri": "the-dest-uri",
-                "username": "dest-username"
-            },
-            "syslog_drain_url": null,
-            "volume_mounts": []
-        }
-    ]
-}`
 
 func get_vcap_services() (string, error) {
 	// var data map[string]interface{}
@@ -74,7 +18,7 @@ func get_vcap_services() (string, error) {
 	// if err != nil {
 	// 	return nil, errors.New("Could not unmarshal vcap services")
 	// }
-	return test_json, nil
+	return "", nil
 }
 
 type RDSCreds struct {
@@ -88,7 +32,7 @@ type RDSCreds struct {
 }
 
 func GetRDSCredentials(label string) (*RDSCreds, error) {
-	data, _ := get_vcap_services()
+	data := os.Getenv("VCAP_SERVICES")
 	instances := gjson.Get(data, "aws-rds")
 	for _, instance := range instances.Array() {
 		if instance.Get("name").String() == label {
@@ -109,21 +53,15 @@ func GetRDSCredentials(label string) (*RDSCreds, error) {
 
 // These are hardcoded to match the FAC stack.
 func GetLocalCredentials(label string) (*RDSCreds, error) {
-	var port string
-	if label == "fac-db" {
-		port = "5432"
-	} else if label == "fac-snapshot-db" {
-		port = "6543"
-	}
 
 	return &RDSCreds{
-		DBName:   "postgres",
-		Host:     "127.0.0.1",
-		Name:     "postgres",
-		Password: "",
-		Port:     port,
-		Uri:      "",
-		Username: "postgres",
+		DBName:   viper.GetString(label + ".db_name"),
+		Name:     viper.GetString(label + ".db_name"),
+		Host:     viper.GetString(label + ".host"),
+		Port:     viper.GetString(label + ".port"),
+		Username: viper.GetString(label + ".username"),
+		Password: viper.GetString(label + ".password"),
+		Uri:      viper.GetString(label + ".uri"),
 	}, nil
 
 }
