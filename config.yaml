@@ -14,3 +14,8 @@ fac-snapshot-db:
   uri: ""
   username: "postgres"
   password: ""
+check-counts:
+  - dissemination_general
+  - dissemination_federalaward
+  - dissemination_finding
+  - dissemination_migrationinspectionrecord

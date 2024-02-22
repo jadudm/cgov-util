@@ -1,7 +1,6 @@
 package vcap
 
 import (
-	"fmt"
 	"os"
 
 	"golang.org/x/exp/slices"
@@ -95,6 +94,6 @@ func GetCreds() (*RDSCreds, *RDSCreds) {
 			os.Exit(-1)
 		}
 	}
-	fmt.Printf("%s\n%s\n", source, dest)
+
 	return source, dest
 }

@@ -1,5 +1,11 @@
 # go-backup
 
+## while developing/testing
+
+```
+go run main.go clone-db-to-db
+```
+
 ## to build
 
 ```
@@ -18,7 +24,7 @@ to see the options, and
 ./gov.gsa.fac.backups clone-db-to-db
 ```
 
-to backup a source DB to a destination.
+to backup a source DB to a destination, based on `config.yaml` settings.
 
 ## assumptions
 
