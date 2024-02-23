@@ -1,3 +1,7 @@
+# The keys "fac-db" and "fac-snapshot-db"
+# must match the names of the DBs in use.
+# Locally, these must be the names of the 
+# containers.
 fac-db:
   db_name: postgres
   host: 127.0.0.1

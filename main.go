@@ -4,7 +4,6 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 
@@ -12,6 +11,7 @@ import (
 
 	"github.com/spf13/viper"
 	"gov.gsa.fac.backups/cmd"
+	"gov.gsa.fac.backups/internal/vcap"
 )
 
 // Useful documentation for people new to Go, and
@@ -38,11 +38,7 @@ func readConfig() {
 			panic(fmt.Errorf("fatal error config file: %w", err))
 		}
 	} else {
-		// Remotely, read it in from the VCAP_SERVICES env var, which will
-		// provide a large JSON structure.
-		viper.SetConfigType("json")
-		vcap_services := []byte(os.Getenv("VCAP_SERVICES"))
-		viper.ReadConfig(bytes.NewBuffer(vcap_services))
+		vcap.ReadVCAPConfig()
 	}
 }
 

@@ -1,50 +1,41 @@
 package vcap
 
 import (
+	"bytes"
 	"os"
 
 	"golang.org/x/exp/slices"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
-	"github.com/tidwall/gjson"
 	"gov.gsa.fac.backups/internal/logging"
 )
 
-func get_vcap_services() (string, error) {
-	// var data map[string]interface{}
-	// err := json.Unmarshal([]byte(test_json), &data)
-	// if err != nil {
-	// 	return nil, errors.New("Could not unmarshal vcap services")
-	// }
-	return "", nil
+type RDSCreds struct {
+	DB_Name  string `json:"db_name"`
+	Host     string `json:"host"`
+	Name     string `json:"name"`
+	Password string `json:"password"`
+	Port     string `json:"port"`
+	Username string `json:"username"`
+	Uri      string `json:"uri"`
 }
 
-type RDSCreds struct {
-	DBName   string
-	Host     string
-	Name     string
-	Password string
-	Port     string
-	Uri      string
-	Username string
+type RDSInstance struct {
+	Plan        string   `json:"plan`
+	Name        string   `json:"name"`
+	Credentials RDSCreds `json:"credentials"`
 }
 
 func GetRDSCredentials(label string) (*RDSCreds, error) {
-	data := os.Getenv("VCAP_SERVICES")
-	instances := gjson.Get(data, "aws-rds")
-	for _, instance := range instances.Array() {
-		if instance.Get("name").String() == label {
-			creds := instance.Get("credentials")
-			return &RDSCreds{
-				DBName:   creds.Get("db_name").String(),
-				Host:     creds.Get("host").String(),
-				Name:     creds.Get("name").String(),
-				Password: creds.Get("password").String(),
-				Port:     creds.Get("port").String(),
-				Uri:      creds.Get("uri").String(),
-				Username: creds.Get("username").String(),
-			}, nil
+	var instanceSlice []RDSInstance
+	err := viper.UnmarshalKey("aws-rds", &instanceSlice)
+	if err != nil {
+		logging.Logger.Println("Could not unmarshal aws-rds from VCAP_SERVICES")
+	}
+	for _, instance := range instanceSlice {
+		if instance.Name == label {
+			return &instance.Credentials, nil
 		}
 	}
 	return nil, errors.Errorf("No credentials found for '%s'", label)
@@ -52,10 +43,9 @@ func GetRDSCredentials(label string) (*RDSCreds, error) {
 
 // These are hardcoded to match the FAC stack.
 func GetLocalCredentials(label string) (*RDSCreds, error) {
-
 	return &RDSCreds{
-		DBName:   viper.GetString(label + ".db_name"),
-		Name:     viper.GetString(label + ".db_name"),
+		DB_Name:  viper.GetString(label + ".db_name"),
+		Name:     viper.GetString(label + ".name"),
 		Host:     viper.GetString(label + ".host"),
 		Port:     viper.GetString(label + ".port"),
 		Username: viper.GetString(label + ".username"),
@@ -65,30 +55,30 @@ func GetLocalCredentials(label string) (*RDSCreds, error) {
 
 }
 
-func GetCreds() (*RDSCreds, *RDSCreds) {
+func GetCreds(source_db string, dest_db string) (*RDSCreds, *RDSCreds) {
 	var source *RDSCreds
 	var dest *RDSCreds
 	var err error
 
 	if slices.Contains([]string{"LOCAL", "TESTING"}, os.Getenv("ENV")) {
-		source, err = GetLocalCredentials("fac-db")
+		source, err = GetLocalCredentials(source_db)
 		if err != nil {
 			logging.Logger.Println("BACKUPS Cannot get local source credentials")
 			os.Exit(-1)
 		}
-		dest, err = GetLocalCredentials("fac-snapshot-db")
+		dest, err = GetLocalCredentials(dest_db)
 		if err != nil {
 			logging.Logger.Println("BACKUPS Cannot get local dest credentials")
 			os.Exit(-1)
 		}
 
 	} else {
-		source, _ = GetRDSCredentials("fac-db")
+		source, err = GetRDSCredentials(source_db)
 		if err != nil {
 			logging.Logger.Println("BACKUPS Cannot get RDS source credentials")
 			os.Exit(-1)
 		}
-		dest, _ = GetRDSCredentials("fac-snapshot-db")
+		dest, err = GetRDSCredentials(dest_db)
 		if err != nil {
 			logging.Logger.Println("BACKUPS Cannot get RDS dest credentials")
 			os.Exit(-1)
@@ -96,4 +86,12 @@ func GetCreds() (*RDSCreds, *RDSCreds) {
 	}
 
 	return source, dest
+}
+
+func ReadVCAPConfig() {
+	// Remotely, read it in from the VCAP_SERVICES env var, which will
+	// provide a large JSON structure.
+	viper.SetConfigType("json")
+	vcap := os.Getenv("VCAP_SERVICES")
+	viper.ReadConfig(bytes.NewBufferString(vcap))
 }

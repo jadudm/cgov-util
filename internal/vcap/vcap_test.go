@@ -1,11 +1,11 @@
 package vcap
 
 import (
-	"fmt"
+	"os"
 	"testing"
 )
 
-var test_json = `{
+var db_vcap = `{
     "s3": [],
     "user-provided": [],
     "aws-rds": [
@@ -44,7 +44,7 @@ var test_json = `{
                 "RDS"
             ],
             "instance_guid": "dest-instance-guid",
-            "instance_name": "fac-db",
+            "instance_name": "fac-snapshot-db",
             "binding_guid": "dest-binding-guid",
             "binding_name": null,
             "credentials": {
@@ -62,6 +62,25 @@ var test_json = `{
     ]
 }`
 
-func TestOne(t *testing.T) {
-	fmt.Println("Hi")
+func TestReadVCAP(t *testing.T) {
+	// Load a test string into the env.
+	os.Setenv("VCAP_SERVICES", db_vcap)
+	// Read the VCAP config.
+	ReadVCAPConfig()
+	// Check to see if we can find the source DB
+	creds, err := GetRDSCredentials("fac-db")
+	if err != nil {
+		t.Error("Could not read fac-db credentials from env.")
+	}
+	if creds.DB_Name != "the-source-db-name" {
+		t.Error("Did not get fac-db db_name")
+	}
+	// How about the dest DB?
+	creds, err = GetRDSCredentials("fac-snapshot-db")
+	if err != nil {
+		t.Error("Could not read fac-db credentials from env.")
+	}
+	if creds.DB_Name != "the-dest-db-name" {
+		t.Error("Did not get fac-db db_name")
+	}
 }
