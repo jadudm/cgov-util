@@ -11,7 +11,7 @@ import (
 	"gov.gsa.fac.backups/internal/logging"
 )
 
-type RDSCreds struct {
+type CredentialsRDS struct {
 	DB_Name  string `json:"db_name"`
 	Host     string `json:"host"`
 	Name     string `json:"name"`
@@ -21,14 +21,57 @@ type RDSCreds struct {
 	Uri      string `json:"uri"`
 }
 
-type RDSInstance struct {
-	Plan        string   `json:"plan`
-	Name        string   `json:"name"`
-	Credentials RDSCreds `json:"credentials"`
+type CredentialsS3 struct {
+	Uri                string   `json:"uri"`
+	InsecureSkipVerify bool     `json:"insecure_skip_verify"`
+	AccessKeyId        string   `json:"access_key_id"`
+	SecretAccessKey    string   `json:"secret_access_key"`
+	Region             string   `json:"region"`
+	Bucket             string   `json:"bucket"`
+	Endpoint           string   `json:"endpoint"`
+	FipsEndpoint       string   `json:"fips_endpoint"`
+	AdditionalBuckets  []string `json:"additional_buckets"`
 }
 
-func GetRDSCredentials(label string) (*RDSCreds, error) {
-	var instanceSlice []RDSInstance
+type InstanceS3 struct {
+	Label        string   `json:"label"`
+	Plan         string   `json:"plan"`
+	Name         string   `json:"name"`
+	Tags         []string `json:"tags"`
+	InstanceGuid string   `json:"instance_guid"`
+	InstanceName string   `json:"instance_name"`
+	BindingGuid  string   `json:"binding_guid"`
+	BindingName  string   `json:"binding_name"`
+}
+
+type InstanceRDS struct {
+	Label          string         `json:"label"`
+	Provider       string         `json:"provider"`
+	Plan           string         `json:"plan"`
+	Name           string         `json:"name"`
+	Tags           []string       `json:"tags"`
+	InstanceGuid   string         `json:"instance_guid"`
+	InstanceName   string         `json:"instance_name"`
+	BindingGuid    string         `json:"binding_guid"`
+	BindingName    string         `json:"binding_name"`
+	Credentials    CredentialsRDS `json:"credentials"`
+	SyslogDrainUrl string         `json:"syslog_drain_url"`
+	VolumeMounts   string         `json:"volume_mounts"`
+}
+
+type UserProvided struct {
+	Label        string            `json:"label"`
+	Name         string            `json:"name"`
+	Tags         []string          `json:"tags"`
+	InstanceGuid string            `json:"instance_guid"`
+	InstanceName string            `json:"instance_name"`
+	BindingGuid  string            `json:"binding_guid"`
+	BindingName  string            `json:"binding_name"`
+	Credentials  map[string]string `json:"credentials"`
+}
+
+func GetRDSCredentials(label string) (*CredentialsRDS, error) {
+	var instanceSlice []InstanceRDS
 	err := viper.UnmarshalKey("aws-rds", &instanceSlice)
 	if err != nil {
 		logging.Logger.Println("Could not unmarshal aws-rds from VCAP_SERVICES")
@@ -42,46 +85,79 @@ func GetRDSCredentials(label string) (*RDSCreds, error) {
 }
 
 // These are hardcoded to match the FAC stack.
-func GetLocalCredentials(label string) (*RDSCreds, error) {
-	return &RDSCreds{
-		DB_Name:  viper.GetString(label + ".db_name"),
-		Name:     viper.GetString(label + ".name"),
-		Host:     viper.GetString(label + ".host"),
-		Port:     viper.GetString(label + ".port"),
-		Username: viper.GetString(label + ".username"),
-		Password: viper.GetString(label + ".password"),
-		Uri:      viper.GetString(label + ".uri"),
-	}, nil
-
+func GetLocalRDSCredentials(label string) (*CredentialsRDS, error) {
+	var instanceSlice []InstanceRDS
+	err := viper.UnmarshalKey("aws-rds", &instanceSlice)
+	if err != nil {
+		logging.Logger.Println("Could not unmarshal aws-rds from VCAP_SERVICES")
+	}
+	for _, instance := range instanceSlice {
+		if instance.Name == label {
+			return &instance.Credentials, nil
+		}
+	}
+	return nil, errors.Errorf("No credentials found for '%s'", label)
 }
 
-func GetCreds(source_db string, dest_db string) (*RDSCreds, *RDSCreds) {
-	var source *RDSCreds
-	var dest *RDSCreds
+type UserProvidedCredentials = map[string]string
+
+func GetUserProvidedCredentials(label string) (UserProvidedCredentials, error) {
+	var instanceSlice []UserProvided
+	err := viper.UnmarshalKey("user-provided", &instanceSlice)
+	if err != nil {
+		logging.Logger.Println("Could not unmarshal aws-rds from VCAP_SERVICES")
+	}
+	for _, instance := range instanceSlice {
+		if instance.Label == label {
+			return instance.Credentials, nil
+		}
+	}
+	return nil, errors.Errorf("No credentials found for '%s'", label)
+}
+
+func GetRDSCreds(source_db string, dest_db string) (*CredentialsRDS, *CredentialsRDS) {
+	var source *CredentialsRDS
+	var dest *CredentialsRDS
 	var err error
 
 	if slices.Contains([]string{"LOCAL", "TESTING"}, os.Getenv("ENV")) {
-		source, err = GetLocalCredentials(source_db)
-		if err != nil {
-			logging.Logger.Println("BACKUPS Cannot get local source credentials")
-			os.Exit(-1)
+		if source_db != "" {
+			source, err = GetLocalRDSCredentials(source_db)
+			if err != nil {
+				logging.Logger.Println("BACKUPS Cannot get local source credentials")
+				os.Exit(-1)
+			}
+		} else {
+			source = nil
 		}
-		dest, err = GetLocalCredentials(dest_db)
-		if err != nil {
-			logging.Logger.Println("BACKUPS Cannot get local dest credentials")
-			os.Exit(-1)
+		if dest_db != "" {
+			dest, err = GetLocalRDSCredentials(dest_db)
+			if err != nil {
+				logging.Logger.Println("BACKUPS Cannot get local dest credentials")
+				os.Exit(-1)
+			}
+		} else {
+			dest = nil
 		}
 
 	} else {
-		source, err = GetRDSCredentials(source_db)
-		if err != nil {
-			logging.Logger.Println("BACKUPS Cannot get RDS source credentials")
-			os.Exit(-1)
+		if source_db != "" {
+			source, err = GetRDSCredentials(source_db)
+			if err != nil {
+				logging.Logger.Println("BACKUPS Cannot get RDS source credentials")
+				os.Exit(-1)
+			}
+		} else {
+			source = nil
 		}
-		dest, err = GetRDSCredentials(dest_db)
-		if err != nil {
-			logging.Logger.Println("BACKUPS Cannot get RDS dest credentials")
-			os.Exit(-1)
+		if dest_db != "" {
+			dest, err = GetRDSCredentials(dest_db)
+			if err != nil {
+				logging.Logger.Println("BACKUPS Cannot get RDS dest credentials")
+				os.Exit(-1)
+			}
+		} else {
+			dest = nil
 		}
 	}
 

@@ -30,7 +30,7 @@ func readConfig() {
 	if slices.Contains([]string{"LOCAL", "TESTING"}, os.Getenv("ENV")) {
 		// Locally, load the file from one of two places.
 		viper.SetConfigName("config")
-		viper.SetConfigType("yaml")
+		viper.SetConfigType("json")
 		viper.AddConfigPath("$HOME/.fac")
 		viper.AddConfigPath(".")
 		err := viper.ReadInConfig()

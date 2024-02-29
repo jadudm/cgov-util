@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	SourceDB      string
-	DestinationDB string
+	SourceDB          string
+	DestinationDB     string
+	DestinationBucket string
 
 	// rootCmd represents the base command when called without any subcommands
 	rootCmd = &cobra.Command{

@@ -13,7 +13,7 @@ import (
 	vcap "gov.gsa.fac.backups/internal/vcap"
 )
 
-func get_row_count(creds *vcap.RDSCreds, table string) int {
+func get_row_count(creds *vcap.CredentialsRDS, table string) int {
 	var count int
 	// FIXME: Not sure if `disable` is correct for RDS sslmode.
 	connStr := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
@@ -30,7 +30,7 @@ func get_row_count(creds *vcap.RDSCreds, table string) int {
 	return count
 }
 
-func check_results(source *vcap.RDSCreds, dest *vcap.RDSCreds, tables []string) {
+func check_results(source *vcap.CredentialsRDS, dest *vcap.CredentialsRDS, tables []string) {
 	// FIXME: These won't exist in the VCAP_SERVICES version
 	// of the config. We'll have to always... load both?
 	// There needs to be a way to configure this in the remote env.
@@ -63,7 +63,7 @@ Expects a space-separated list of table names as arguments.
 `,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		source_creds, dest_creds := vcap.GetCreds(SourceDB, DestinationDB)
+		source_creds, dest_creds := vcap.GetRDSCreds(SourceDB, DestinationDB)
 		check_results(source_creds, dest_creds, args)
 
 	},

@@ -1,13 +1,32 @@
 package vcap
 
 import (
+	"fmt"
 	"os"
 	"testing"
 )
 
 var db_vcap = `{
     "s3": [],
-    "user-provided": [],
+    "user-provided": [
+        {
+            "label": "mc",
+            "name": "backups",
+            "tags": [],
+            "instance_guid": "UUIDALPHA1",
+            "instance_name": "backups",
+            "binding_guid": "UUIDALPHA2",
+            "binding_name": null,
+            "credentials": {
+                "access_key_id": "longtest",
+                "secret_access_key": "longtest",
+                "bucket": "gsa-fac-private-s3",
+                "endpoint": "localhost",
+                "admin_username": "minioadmin",
+                "admin_password": "minioadmin"
+            }
+        }
+    ],
     "aws-rds": [
         {
             "label": "aws-rds",
@@ -82,5 +101,21 @@ func TestReadVCAP(t *testing.T) {
 	}
 	if creds.DB_Name != "the-dest-db-name" {
 		t.Error("Did not get fac-db db_name")
+	}
+}
+
+func TestReadUserProvided(t *testing.T) {
+	// Load a test string into the env.
+	os.Setenv("VCAP_SERVICES", db_vcap)
+	// Read the VCAP config.
+	ReadVCAPConfig()
+	creds, err := GetUserProvidedCredentials("mc")
+	fmt.Println(creds)
+	if err != nil {
+		t.Error("Could not read user-provided credentials from env.")
+	}
+	_, ok := creds["admin_username"]
+	if !ok {
+		t.Error("Could not find a username")
 	}
 }
