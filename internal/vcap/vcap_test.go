@@ -1,7 +1,6 @@
 package vcap
 
 import (
-	"fmt"
 	"os"
 	"testing"
 )
@@ -110,7 +109,6 @@ func TestReadUserProvided(t *testing.T) {
 	// Read the VCAP config.
 	ReadVCAPConfig()
 	creds, err := GetUserProvidedCredentials("mc")
-	fmt.Println(creds)
 	if err != nil {
 		t.Error("Could not read user-provided credentials from env.")
 	}
