@@ -10,19 +10,11 @@ import (
 	"gov.gsa.fac.backups/internal/vcap"
 )
 
-// export AWS_PRIVATE_ACCESS_KEY_ID=longtest
-// export AWS_PRIVATE_SECRET_ACCESS_KEY=longtest
-// export AWS_S3_PRIVATE_ENDPOINT="http://minio:9000"
-// mc alias set myminio "${AWS_S3_PRIVATE_ENDPOINT}" minioadmin minioadmin
-// # Do nothing if the bucket already exists.
-// # https: //min.io/docs/minio/linux/reference/minio-mc/mc-mb.html
-// mc mb --ignore-existing myminio/gsa-fac-private-s3
-
 // https://bitfieldconsulting.com/golang/scripting
 func S3(in_pipe *script.Pipe, up *vcap.CredentialsS3, prefix string, source_db string) *script.Pipe {
 	os.Setenv("ACCESS_KEY_ID", up.AccessKeyId)
 	os.Setenv("SECRET_ACCESS_KEY", up.SecretAccessKey)
-
+	// https://serverfault.com/questions/886562/streaming-postgresql-pg-dump-to-s3
 	cmd := []string{
 		"s3",
 		"cp",
