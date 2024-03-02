@@ -4,7 +4,7 @@
 name: Build gov.gsa.fac.backups
 
 env:
-  GO_VERSION: '1.20'
+  GO_VERSION: '1.22'
 
 on:
   push:
@@ -32,9 +32,16 @@ jobs:
         go get github.com/spf13/cobra
         go get github.com/spf13/viper
         go get github.com/tidwall/gjson
-        
+
+    - name: Set outputs
+      id: vars
+      run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+    - name: Check outputs
+      run: echo ${{ steps.vars.outputs.sha_short }}
+
     - name: Build
-      run: go build -v ./...
+      run: go build -ldflags "-X main.sha=${{steps.vars.outputs.sha_short}}" -v ./...
 
     - name: Test
       run: go test -v ./...

@@ -21,3 +21,6 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           goos: linux
           goarch: amd64
+          goversion: "https://go.dev/dl/go1.22.0.linux-amd64.tar.gz"
+          binary_name: "gov.gsa.fac.backups"
+          extra_files: LICENSE README.md

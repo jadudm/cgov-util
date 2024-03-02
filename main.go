@@ -14,6 +14,8 @@ import (
 	"gov.gsa.fac.backups/internal/vcap"
 )
 
+var SHA1 string
+
 // Useful documentation for people new to Go, and
 // related to modules in this command.
 // https://www.digitalocean.com/community/tutorials/how-to-use-the-cobra-package-in-go
@@ -26,7 +28,9 @@ import (
 // Looks for config.yaml in the same directory as the app.
 // Optionally, the config can be in `$HOME/.fac/config.yaml`
 func readConfig() {
-
+	// Pass down the SHA
+	cmd.SHA1 = SHA1
+	// Do the right thing in the right env.
 	if slices.Contains([]string{"LOCAL", "TESTING"}, os.Getenv("ENV")) {
 		// Locally, load the file from one of two places.
 		viper.SetConfigName("config")
