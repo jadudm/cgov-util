@@ -34,14 +34,15 @@ type CredentialsS3 struct {
 }
 
 type InstanceS3 struct {
-	Label        string   `json:"label"`
-	Plan         string   `json:"plan"`
-	Name         string   `json:"name"`
-	Tags         []string `json:"tags"`
-	InstanceGuid string   `json:"instance_guid"`
-	InstanceName string   `json:"instance_name"`
-	BindingGuid  string   `json:"binding_guid"`
-	BindingName  string   `json:"binding_name"`
+	Label        string        `json:"label"`
+	Plan         string        `json:"plan"`
+	Name         string        `json:"name"`
+	Tags         []string      `json:"tags"`
+	InstanceGuid string        `json:"instance_guid"`
+	InstanceName string        `json:"instance_name"`
+	BindingGuid  string        `json:"binding_guid"`
+	BindingName  string        `json:"binding_name"`
+	Credentials  CredentialsS3 `json:"credentials"`
 }
 
 type InstanceRDS struct {
@@ -101,6 +102,7 @@ func GetLocalRDSCredentials(label string) (*CredentialsRDS, error) {
 
 type UserProvidedCredentials = map[string]string
 
+// Returns a map, not a pointer to a structure
 func GetUserProvidedCredentials(label string) (UserProvidedCredentials, error) {
 	var instanceSlice []UserProvided
 	err := viper.UnmarshalKey("user-provided", &instanceSlice)
@@ -110,6 +112,20 @@ func GetUserProvidedCredentials(label string) (UserProvidedCredentials, error) {
 	for _, instance := range instanceSlice {
 		if instance.Label == label {
 			return instance.Credentials, nil
+		}
+	}
+	return nil, errors.Errorf("No credentials found for '%s'", label)
+}
+
+func GetS3Credentials(label string) (*CredentialsS3, error) {
+	var instanceSlice []InstanceS3
+	err := viper.UnmarshalKey("s3", &instanceSlice)
+	if err != nil {
+		logging.Logger.Println("Could not unmarshal aws-rds from VCAP_SERVICES")
+	}
+	for _, instance := range instanceSlice {
+		if instance.Name == label {
+			return &instance.Credentials, nil
 		}
 	}
 	return nil, errors.Errorf("No credentials found for '%s'", label)
