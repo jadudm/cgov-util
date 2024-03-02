@@ -1,5 +1,7 @@
 # .github/workflows/release.yaml
 
+name: Release gov.gsa.fac.backups
+
 on:
   release:
     types: [created]
