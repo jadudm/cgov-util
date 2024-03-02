@@ -8,7 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
-	"gov.gsa.fac.backups/internal/logging"
+	"gov.gsa.fac.cgov-util/internal/logging"
 )
 
 type CredentialsRDS struct {

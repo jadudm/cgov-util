@@ -9,9 +9,9 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/spf13/cobra"
-	"gov.gsa.fac.backups/internal/logging"
-	"gov.gsa.fac.backups/internal/pipes"
-	vcap "gov.gsa.fac.backups/internal/vcap"
+	"gov.gsa.fac.cgov-util/internal/logging"
+	"gov.gsa.fac.cgov-util/internal/pipes"
+	vcap "gov.gsa.fac.cgov-util/internal/vcap"
 )
 
 func bucket_local(source_creds *vcap.CredentialsRDS, up vcap.UserProvidedCredentials) {

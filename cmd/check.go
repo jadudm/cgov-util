@@ -9,8 +9,8 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"gov.gsa.fac.backups/internal/logging"
-	vcap "gov.gsa.fac.backups/internal/vcap"
+	"gov.gsa.fac.cgov-util/internal/logging"
+	vcap "gov.gsa.fac.cgov-util/internal/vcap"
 )
 
 func get_row_count(creds *vcap.CredentialsRDS, table string) int {

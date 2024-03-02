@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/bitfield/script"
-	"gov.gsa.fac.backups/internal/logging"
-	"gov.gsa.fac.backups/internal/vcap"
+	"gov.gsa.fac.cgov-util/internal/logging"
+	"gov.gsa.fac.cgov-util/internal/vcap"
 )
 
 // https://bitfieldconsulting.com/golang/scripting
@@ -31,8 +31,6 @@ func PG_Dump(creds *vcap.CredentialsRDS) *script.Pipe {
 	}
 	// Combine the slice for printing and execution.
 	combined := strings.Join(cmd[:], " ")
-	// This will log the password...
-	logging.Logger.Printf("BACKUPS Running `%s`\n", combined)
 	logging.Logger.Printf("BACKUPS pg_dump targeting %s", creds.DB_Name)
 	return script.Exec(combined)
 }

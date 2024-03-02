@@ -1,4 +1,4 @@
-module gov.gsa.fac.backups
+module gov.gsa.fac.cgov-util
 
 go 1.20
 

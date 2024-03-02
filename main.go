@@ -10,8 +10,8 @@ import (
 	"golang.org/x/exp/slices"
 
 	"github.com/spf13/viper"
-	"gov.gsa.fac.backups/cmd"
-	"gov.gsa.fac.backups/internal/vcap"
+	"gov.gsa.fac.cgov-util/cmd"
+	"gov.gsa.fac.cgov-util/internal/vcap"
 )
 
 var SHA1 string

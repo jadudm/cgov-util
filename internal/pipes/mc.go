@@ -7,8 +7,8 @@ import (
 
 	"github.com/bitfield/script"
 	"github.com/google/uuid"
-	"gov.gsa.fac.backups/internal/logging"
-	"gov.gsa.fac.backups/internal/vcap"
+	"gov.gsa.fac.cgov-util/internal/logging"
+	"gov.gsa.fac.cgov-util/internal/vcap"
 )
 
 // https://bitfieldconsulting.com/golang/scripting
@@ -41,8 +41,6 @@ func Mc(in_pipe *script.Pipe, upc vcap.UserProvidedCredentials, prefix string, s
 	}
 	// Combine the slice for printing and execution.
 	combined := strings.Join(cmd[:], " ")
-	// This will log the password...
-	logging.Logger.Printf("BACKUPS Running `%s`\n", combined)
 	logging.Logger.Printf("BACKUPS mc targeting %s", prefix)
 	return in_pipe.Exec(combined)
 }

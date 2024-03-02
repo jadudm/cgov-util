@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/bitfield/script"
-	"gov.gsa.fac.backups/internal/logging"
-	"gov.gsa.fac.backups/internal/vcap"
+	"gov.gsa.fac.cgov-util/internal/logging"
+	"gov.gsa.fac.cgov-util/internal/vcap"
 )
 
 // https://bitfieldconsulting.com/golang/scripting
@@ -26,8 +26,6 @@ func S3(in_pipe *script.Pipe, up *vcap.CredentialsS3, prefix string, source_db s
 
 	// Combine the slice for printing and execution.
 	combined := strings.Join(cmd[:], " ")
-	// This will log the password...
-	logging.Logger.Printf("BACKUPS Running `%s`\n", combined)
 	logging.Logger.Printf("BACKUPS s3 targeting %s", prefix)
 	return in_pipe.Exec(combined)
 }

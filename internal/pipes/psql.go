@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/bitfield/script"
-	"gov.gsa.fac.backups/internal/logging"
-	"gov.gsa.fac.backups/internal/vcap"
+	"gov.gsa.fac.cgov-util/internal/logging"
+	"gov.gsa.fac.cgov-util/internal/vcap"
 )
 
 func Psql(in_pipe *script.Pipe, creds *vcap.CredentialsRDS) *script.Pipe {
