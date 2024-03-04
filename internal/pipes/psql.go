@@ -23,6 +23,6 @@ func Psql(in_pipe *script.Pipe, creds *vcap.CredentialsRDS) *script.Pipe {
 		),
 	}
 	combined := strings.Join(cmd[:], " ")
-	logging.Logger.Printf("BACKUPS psql targeting %s", creds.DB_Name)
+	logging.Logger.Printf("BACKUPS psql targeting %s\n", creds.DB_Name)
 	return in_pipe.Exec(combined)
 }
