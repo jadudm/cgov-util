@@ -31,6 +31,7 @@ func PG_Dump(creds *vcap.CredentialsRDS) *script.Pipe {
 	}
 	// Combine the slice for printing and execution.
 	combined := strings.Join(cmd[:], " ")
+	fmt.Printf("command: %s\n", combined)
 	logging.Logger.Printf("BACKUPS pg_dump targeting %s", creds.DB_Name)
 	return script.Exec(combined)
 }

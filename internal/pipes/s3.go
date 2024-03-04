@@ -27,6 +27,7 @@ func S3(in_pipe *script.Pipe, up *vcap.CredentialsS3, prefix string, source_db s
 
 	// Combine the slice for printing and execution.
 	combined := strings.Join(cmd[:], " ")
+	fmt.Printf("command: %s", combined)
 	logging.Logger.Printf("BACKUPS s3 targeting %s", prefix)
 	return in_pipe.Exec(combined)
 }
