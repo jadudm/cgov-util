@@ -16,6 +16,7 @@ func S3(in_pipe *script.Pipe, up *vcap.CredentialsS3, prefix string, source_db s
 	os.Setenv("SECRET_ACCESS_KEY", up.SecretAccessKey)
 	// https://serverfault.com/questions/886562/streaming-postgresql-pg-dump-to-s3
 	cmd := []string{
+		"aws",
 		"s3",
 		"cp",
 		fmt.Sprintf("s3://%s/backups/%s-%s.dump",
