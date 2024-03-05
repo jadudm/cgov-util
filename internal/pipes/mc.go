@@ -38,11 +38,10 @@ func Mc(in_pipe *script.Pipe,
 	cmd := []string{
 		"mc",
 		"pipe",
-		fmt.Sprintf("%s/%s/backups/%s-%s-%s_%s.dump",
+		fmt.Sprintf("%s/%s/backups/%s-%s_%s.dump",
 			minio_alias,
 			upc["bucket"],
 			prefix,
-			source_db,
 			schema, table),
 	}
 	// Combine the slice for printing and execution.

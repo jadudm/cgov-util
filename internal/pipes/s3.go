@@ -26,18 +26,17 @@ func S3(in_pipe *script.Pipe,
 		"s3",
 		"cp",
 		"-",
-		fmt.Sprintf("s3://%s/backups/%s-%s.dump",
+		fmt.Sprintf("s3://%s/backups/%s-%s_%s.dump",
 			up.Bucket,
 			prefix,
-			source_db),
+			schema, table),
 	}
 
 	// Combine the slice for printing and execution.
 	combined := strings.Join(cmd[:], " ")
+	logging.Logger.Printf("BACKUPS s3 targeting %s\n", prefix)
 	if debug {
 		fmt.Printf("command: %s\n", combined)
-
 	}
-	logging.Logger.Printf("BACKUPS s3 targeting %s\n", prefix)
 	return in_pipe.Exec(combined)
 }

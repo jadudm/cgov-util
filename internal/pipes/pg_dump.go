@@ -32,10 +32,10 @@ func PG_Dump_Table(creds *vcap.CredentialsRDS, schema string, table string, debu
 	}
 	// Combine the slice for printing and execution.
 	combined := strings.Join(cmd[:], " ")
+	logging.Logger.Printf("BACKUPS pg_dump targeting %s\n", creds.DB_Name)
 	if debug {
 		fmt.Printf("command: %s\n", combined)
 	}
-	logging.Logger.Printf("BACKUPS pg_dump targeting %s\n", creds.DB_Name)
 	return script.Exec(combined)
 }
 
@@ -61,9 +61,9 @@ func PG_Dump(creds *vcap.CredentialsRDS, debug bool) *script.Pipe {
 	}
 	// Combine the slice for printing and execution.
 	combined := strings.Join(cmd[:], " ")
+	logging.Logger.Printf("BACKUPS pg_dump targeting %s\n", creds.DB_Name)
 	if debug {
 		fmt.Printf("command: %s\n", combined)
 	}
-	logging.Logger.Printf("BACKUPS pg_dump targeting %s\n", creds.DB_Name)
 	return script.Exec(combined)
 }
