@@ -6,15 +6,16 @@ import (
 
 	"github.com/bitfield/script"
 	"gov.gsa.fac.cgov-util/internal/logging"
-	"gov.gsa.fac.cgov-util/internal/vcap"
+	"gov.gsa.fac.cgov-util/internal/structs"
+	"gov.gsa.fac.cgov-util/internal/util"
 )
 
 // https://bitfieldconsulting.com/golang/scripting
 func S3(in_pipe *script.Pipe,
-	up *vcap.CredentialsS3,
+	up *structs.CredentialsS3,
 	prefix string,
 	source_db string,
-	schema string, table string, debug bool) *script.Pipe {
+	schema string, table string) *script.Pipe {
 	// os.Setenv("AWS_ACCESS_KEY_ID", up.AccessKeyId)
 	// os.Setenv("AWS_SECRET_ACCESS_KEY", up.SecretAccessKey)
 	// os.Setenv("AWS_DEFAULT_REGION", up.Region)
@@ -37,7 +38,7 @@ func S3(in_pipe *script.Pipe,
 	// Combine the slice for printing and execution.
 	combined := strings.Join(cmd[:], " ")
 	logging.Logger.Printf("BACKUPS s3 targeting %s\n", prefix)
-	if debug {
+	if util.IsDebugLevel("DEBUG") {
 		fmt.Printf("command: %s\n", combined)
 	}
 	return in_pipe.Exec(combined)

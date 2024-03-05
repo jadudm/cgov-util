@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	"gov.gsa.fac.cgov-util/internal/logging"
 	"gov.gsa.fac.cgov-util/internal/pipes"
+	"gov.gsa.fac.cgov-util/internal/structs"
 	"gov.gsa.fac.cgov-util/internal/util"
 
 	vcap "gov.gsa.fac.cgov-util/internal/vcap"
@@ -32,15 +33,15 @@ var backup_tag string
 // 	}
 // }
 
-func bucket_local_tables(source_creds *vcap.CredentialsRDS, up vcap.UserProvidedCredentials) {
+func bucket_local_tables(source_creds *structs.CredentialsRDS, up structs.UserProvidedCredentials) {
 	table_to_schema := util.Get_table_and_schema_names(source_creds)
 	for table, schema := range table_to_schema {
 		mc_pipe := pipes.Mc(
-			pipes.PG_Dump_Table(source_creds, schema, table, Debug),
+			pipes.PG_Dump_Table(source_creds, schema, table),
 			up,
 			backup_tag,
 			source_creds.DB_Name,
-			schema, table, Debug,
+			schema, table,
 		)
 		mc_pipe.Wait()
 		if err := mc_pipe.Error(); err != nil {
@@ -50,15 +51,15 @@ func bucket_local_tables(source_creds *vcap.CredentialsRDS, up vcap.UserProvided
 	}
 }
 
-func bucket_cgov_tables(source_creds *vcap.CredentialsRDS, up *vcap.CredentialsS3) {
+func bucket_cgov_tables(source_creds *structs.CredentialsRDS, up *structs.CredentialsS3) {
 	table_to_schema := util.Get_table_and_schema_names(source_creds)
 	for table, schema := range table_to_schema {
 		s3_pipe := pipes.S3(
-			pipes.PG_Dump_Table(source_creds, schema, table, Debug),
+			pipes.PG_Dump_Table(source_creds, schema, table),
 			up,
 			backup_tag,
 			source_creds.DB_Name,
-			schema, table, Debug,
+			schema, table,
 		)
 		s3_pipe.Wait()
 		if err := s3_pipe.Error(); err != nil {
@@ -89,7 +90,7 @@ to quickly create a Cobra application.`,
 				logging.Logger.Printf("BACKUPS could not get s3 credentials")
 				os.Exit(-1)
 			}
-			if Debug {
+			if util.IsDebugLevel("DEBUG") {
 				logging.Logger.Printf("BACKUPS s3 credentials %v\n", up)
 			}
 			bucket_cgov_tables(source_creds, up)
@@ -103,7 +104,6 @@ func init() {
 	bucketCmd.Flags().StringVarP(&SourceDB, "source-db", "", "", "source database (req)")
 	bucketCmd.Flags().StringVarP(&DestinationBucket, "destination-bucket", "", "", "destination database (req)")
 	bucketCmd.Flags().StringVarP(&backup_tag, "backup-tag", "", "", "SNAPSHOT, HOURLY-03, etc. (req)")
-	bucketCmd.Flags().BoolVarP(&Debug, "debug", "d", false, "Log debug statements")
 	bucketCmd.MarkFlagRequired("source-db")
 	bucketCmd.MarkFlagRequired("destination-bucket")
 	bucketCmd.MarkFlagRequired("backup_tag")

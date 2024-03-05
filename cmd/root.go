@@ -15,7 +15,6 @@ var (
 	DestinationDB     string
 	DestinationBucket string
 	SHA1              string
-	Debug             bool
 
 	// rootCmd represents the base command when called without any subcommands
 	rootCmd = &cobra.Command{

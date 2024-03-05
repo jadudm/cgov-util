@@ -10,10 +10,12 @@ import (
 
 	"github.com/spf13/cobra"
 	"gov.gsa.fac.cgov-util/internal/logging"
+	"gov.gsa.fac.cgov-util/internal/structs"
+
 	vcap "gov.gsa.fac.cgov-util/internal/vcap"
 )
 
-func get_row_count(creds *vcap.CredentialsRDS, table string) int {
+func get_row_count(creds *structs.CredentialsRDS, table string) int {
 	var count int
 	// FIXME: Not sure if `disable` is correct for RDS sslmode.
 	connStr := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
@@ -30,7 +32,7 @@ func get_row_count(creds *vcap.CredentialsRDS, table string) int {
 	return count
 }
 
-func check_results(source *vcap.CredentialsRDS, dest *vcap.CredentialsRDS, tables []string) {
+func check_results(source *structs.CredentialsRDS, dest *structs.CredentialsRDS, tables []string) {
 	// FIXME: These won't exist in the VCAP_SERVICES version
 	// of the config. We'll have to always... load both?
 	// There needs to be a way to configure this in the remote env.

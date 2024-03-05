@@ -5,10 +5,10 @@ import (
 	"os"
 
 	"gov.gsa.fac.cgov-util/internal/logging"
-	"gov.gsa.fac.cgov-util/internal/vcap"
+	"gov.gsa.fac.cgov-util/internal/structs"
 )
 
-func Get_table_and_schema_names(source_creds *vcap.CredentialsRDS) map[string]string {
+func Get_table_and_schema_names(source_creds *structs.CredentialsRDS) map[string]string {
 	// Do this table-by-table for RAM reasons.
 	db, err := sql.Open("postgres", source_creds.Uri)
 	if err != nil {

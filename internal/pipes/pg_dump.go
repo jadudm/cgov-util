@@ -6,10 +6,11 @@ import (
 
 	"github.com/bitfield/script"
 	"gov.gsa.fac.cgov-util/internal/logging"
-	"gov.gsa.fac.cgov-util/internal/vcap"
+	"gov.gsa.fac.cgov-util/internal/structs"
+	"gov.gsa.fac.cgov-util/internal/util"
 )
 
-func PG_Dump_Table(creds *vcap.CredentialsRDS, schema string, table string, debug bool) *script.Pipe {
+func PG_Dump_Table(creds *structs.CredentialsRDS, schema string, table string) *script.Pipe {
 	// Compose the command as a slice
 	cmd := []string{
 		"pg_dump",
@@ -33,14 +34,14 @@ func PG_Dump_Table(creds *vcap.CredentialsRDS, schema string, table string, debu
 	// Combine the slice for printing and execution.
 	combined := strings.Join(cmd[:], " ")
 	logging.Logger.Printf("BACKUPS pg_dump targeting %s\n", creds.DB_Name)
-	if debug {
+	if util.IsDebugLevel("DEBUG") {
 		fmt.Printf("command: %s\n", combined)
 	}
 	return script.Exec(combined)
 }
 
 // https://bitfieldconsulting.com/golang/scripting
-func PG_Dump(creds *vcap.CredentialsRDS, debug bool) *script.Pipe {
+func PG_Dump(creds *structs.CredentialsRDS) *script.Pipe {
 	// Compose the command as a slice
 	cmd := []string{
 		"pg_dump",
@@ -62,7 +63,7 @@ func PG_Dump(creds *vcap.CredentialsRDS, debug bool) *script.Pipe {
 	// Combine the slice for printing and execution.
 	combined := strings.Join(cmd[:], " ")
 	logging.Logger.Printf("BACKUPS pg_dump targeting %s\n", creds.DB_Name)
-	if debug {
+	if util.IsDebugLevel("DEBUG") {
 		fmt.Printf("command: %s\n", combined)
 	}
 	return script.Exec(combined)

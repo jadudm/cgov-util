@@ -6,10 +6,11 @@ import (
 
 	"github.com/bitfield/script"
 	"gov.gsa.fac.cgov-util/internal/logging"
-	"gov.gsa.fac.cgov-util/internal/vcap"
+	"gov.gsa.fac.cgov-util/internal/structs"
+	"gov.gsa.fac.cgov-util/internal/util"
 )
 
-func Psql(in_pipe *script.Pipe, creds *vcap.CredentialsRDS, debug bool) *script.Pipe {
+func Psql(in_pipe *script.Pipe, creds *structs.CredentialsRDS) *script.Pipe {
 	cmd := []string{
 		"psql",
 		"--no-password",
@@ -23,7 +24,7 @@ func Psql(in_pipe *script.Pipe, creds *vcap.CredentialsRDS, debug bool) *script.
 		),
 	}
 	combined := strings.Join(cmd[:], " ")
-	if debug {
+	if util.IsDebugLevel("DEBUG") {
 		logging.Logger.Printf("command: %s\n", combined)
 	}
 	logging.Logger.Printf("BACKUPS psql targeting %s\n", creds.DB_Name)

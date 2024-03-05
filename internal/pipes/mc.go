@@ -8,16 +8,17 @@ import (
 	"github.com/bitfield/script"
 	"github.com/google/uuid"
 	"gov.gsa.fac.cgov-util/internal/logging"
-	"gov.gsa.fac.cgov-util/internal/vcap"
+	"gov.gsa.fac.cgov-util/internal/structs"
+	"gov.gsa.fac.cgov-util/internal/util"
 )
 
 // https://bitfieldconsulting.com/golang/scripting
 func Mc(in_pipe *script.Pipe,
-	upc vcap.UserProvidedCredentials,
+	upc structs.UserProvidedCredentials,
 	prefix string,
 	source_db string,
 	schema string,
-	table string, debug bool) *script.Pipe {
+	table string) *script.Pipe {
 	// // mc pipe myminio/gsa-fac-private-s3/backups/${PREFIX}-${FROM_DATABASE}.dump
 	// Always set the alias first.
 	os.Setenv("AWS_PRIVATE_ACCESS_KEY_ID", upc["access_key_id"])
@@ -46,7 +47,7 @@ func Mc(in_pipe *script.Pipe,
 	}
 	// Combine the slice for printing and execution.
 	combined := strings.Join(cmd[:], " ")
-	if debug {
+	if util.IsDebugLevel("DEBUG") {
 		fmt.Printf("command: %s\n", combined)
 	}
 	logging.Logger.Printf("BACKUPS mc targeting %s", prefix)
