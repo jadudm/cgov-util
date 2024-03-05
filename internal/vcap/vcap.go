@@ -2,6 +2,7 @@ package vcap
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 
 	"golang.org/x/exp/slices"
@@ -66,7 +67,25 @@ func GetS3Credentials(name string) (*structs.CredentialsS3, error) {
 	}
 	for _, instance := range instanceSlice {
 		if instance.Name == name {
-			return &instance.Credentials, nil
+			all_looks_good := false
+
+			// We have to have an endpoint, or the two key bits.
+			if (len(instance.Credentials.AccessKeyId) > 0) &&
+				(len(instance.Credentials.SecretAccessKey) > 0) {
+				all_looks_good = true
+			} else if len(instance.Credentials.Uri) > 0 {
+				all_looks_good = true
+			}
+
+			if len(instance.Credentials.Region) < 1 {
+				logging.Logger.Println("BACKUPS region is empty")
+				os.Exit(-1)
+			}
+			if all_looks_good {
+				return &instance.Credentials, nil
+			} else {
+				return nil, fmt.Errorf("BACKUPS no access key or endpoint")
+			}
 		}
 	}
 
