@@ -2,6 +2,7 @@ package vcap
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 
 	"golang.org/x/exp/slices"
@@ -117,18 +118,19 @@ func GetUserProvidedCredentials(label string) (UserProvidedCredentials, error) {
 	return nil, errors.Errorf("No credentials found for '%s'", label)
 }
 
-func GetS3Credentials(label string) (*CredentialsS3, error) {
+func GetS3Credentials(name string) (*CredentialsS3, error) {
 	var instanceSlice []InstanceS3
 	err := viper.UnmarshalKey("s3", &instanceSlice)
 	if err != nil {
-		logging.Logger.Println("Could not unmarshal aws-rds from VCAP_SERVICES")
+		logging.Logger.Println("Could not unmarshal s3 from VCAP_SERVICES")
 	}
 	for _, instance := range instanceSlice {
-		if instance.Name == label {
+		if instance.Name == name {
+			fmt.Println(instance)
 			return &instance.Credentials, nil
 		}
 	}
-	return nil, errors.Errorf("No credentials found for '%s'", label)
+	return nil, errors.Errorf("No credentials found for '%s'", name)
 }
 
 func GetRDSCreds(source_db string, dest_db string) (*CredentialsRDS, *CredentialsRDS) {
