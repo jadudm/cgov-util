@@ -2,7 +2,6 @@ package pipes
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/bitfield/script"
@@ -16,12 +15,15 @@ func S3(in_pipe *script.Pipe,
 	prefix string,
 	source_db string,
 	schema string, table string, debug bool) *script.Pipe {
-	os.Setenv("AWS_ACCESS_KEY_ID", up.AccessKeyId)
-	os.Setenv("AWS_SECRET_ACCESS_KEY", up.SecretAccessKey)
-	os.Setenv("AWS_DEFAULT_REGION", up.Region)
+	// os.Setenv("AWS_ACCESS_KEY_ID", up.AccessKeyId)
+	// os.Setenv("AWS_SECRET_ACCESS_KEY", up.SecretAccessKey)
+	// os.Setenv("AWS_DEFAULT_REGION", up.Region)
 
 	// https://serverfault.com/questions/886562/streaming-postgresql-pg-dump-to-s3
 	cmd := []string{
+		fmt.Sprintf("AWS_ACCESS_KEY_ID='%s'", up.AccessKeyId),
+		fmt.Sprintf("AWS_SECRET_ACCESS_KEY='%s'", up.SecretAccessKey),
+		fmt.Sprintf("AWS_DEFAULT_REGION='%s'", up.Region),
 		"aws",
 		"s3",
 		"cp",
