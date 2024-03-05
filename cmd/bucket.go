@@ -84,7 +84,14 @@ to quickly create a Cobra application.`,
 			up, _ := vcap.GetUserProvidedCredentials("mc")
 			bucket_local_tables(source_creds, up)
 		} else {
-			up, _ := vcap.GetS3Credentials(DestinationBucket)
+			up, err := vcap.GetS3Credentials(DestinationBucket)
+			if err != nil {
+				logging.Logger.Printf("BACKUPS could not get s3 credentials")
+				os.Exit(-1)
+			}
+			if Debug {
+				logging.Logger.Printf("BACKUPS s3 credentials %v\n", up)
+			}
 			bucket_cgov_tables(source_creds, up)
 		}
 
