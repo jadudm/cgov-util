@@ -22,20 +22,21 @@ type CredentialsS3 struct {
 	Endpoint           string   `json:"endpoint"`
 	FipsEndpoint       string   `json:"fips_endpoint"`
 	AdditionalBuckets  []string `json:"additional_buckets"`
-	SyslogDrainUrl     string   `json:"syslog_drain_url"`
-	VolumeMounts       []string `json:"volume_mounts`
 }
 
 type InstanceS3 struct {
-	Label        string        `json:"label"`
-	Plan         string        `json:"plan"`
-	Name         string        `json:"name"`
-	Tags         []string      `json:"tags"`
-	InstanceGuid string        `json:"instance_guid"`
-	InstanceName string        `json:"instance_name"`
-	BindingGuid  string        `json:"binding_guid"`
-	BindingName  string        `json:"binding_name"`
-	Credentials  CredentialsS3 `json:"credentials"`
+	Label          string            `json:"label"`
+	Provider       string            `json:"provider"`
+	Plan           string            `json:"plan"`
+	Name           string            `json:"name"`
+	Tags           []string          `json:"tags"`
+	InstanceGuid   string            `json:"instance_guid"`
+	InstanceName   string            `json:"instance_name"`
+	BindingGuid    string            `json:"binding_guid"`
+	BindingName    string            `json:"binding_name"`
+	Credentials    map[string]string `json:"credentials"`
+	SyslogDrainUrl string            `json:"syslog_drain_url"`
+	VolumeMounts   []string          `json:"volume_mounts"`
 }
 
 type InstanceRDS struct {

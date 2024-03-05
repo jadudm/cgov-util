@@ -1,6 +1,7 @@
 package vcap
 
 import (
+	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -115,5 +116,25 @@ func TestReadUserProvided(t *testing.T) {
 	_, ok := creds["admin_username"]
 	if !ok {
 		t.Error("Could not find a username")
+	}
+}
+
+func TestReadS3(t *testing.T) {
+	buffer, err := ioutil.ReadFile("example.json")
+	if err != nil {
+		t.Error("Could not read example.json")
+	}
+	os.Setenv("VCAP_SERVICES", string(buffer))
+	ReadVCAPConfig()
+
+	creds, err := GetS3Credentials("backups")
+	if err != nil {
+		t.Error("Could not read backups credentials from s3.")
+	}
+	if creds["access_key_id"] != "ACCESSKEYIDALPHA" {
+		t.Error("Did not get s3 access key ACCESSKEYIDALPHA")
+	}
+	if creds["secret_access_key"] != "SECRETACCESSKEY+ALPHA" {
+		t.Error("Did not get s3 secret key SECRETACCESSKEY+ALPHA")
 	}
 }

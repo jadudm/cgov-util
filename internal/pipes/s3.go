@@ -2,11 +2,11 @@ package pipes
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/bitfield/script"
 	"gov.gsa.fac.cgov-util/internal/logging"
-	"gov.gsa.fac.cgov-util/internal/structs"
 	"gov.gsa.fac.cgov-util/internal/util"
 )
 
@@ -14,20 +14,21 @@ import (
 // are coming through from VCAP empty. But, the endpoint is not.
 // This makes no sense.
 func S3(in_pipe *script.Pipe,
-	up *structs.CredentialsS3,
+	up map[string]string,
 	prefix string,
 	source_db string,
 	schema string, table string) *script.Pipe {
+	os.Setenv("AWS_SECRET_ACCESS_KEY", up["secret_access_key"])
+	os.Setenv("AWS_ACCESS_KEY_ID", up["access_key_id"])
+	os.Setenv("AWS_DEFAULT_REGION", up["region"])
 	// https://serverfault.com/questions/886562/streaming-postgresql-pg-dump-to-s3
 	cmd := []string{
 		"aws",
 		"s3",
 		"cp",
-		"--endpoint-url",
-		up.Uri,
 		"-",
 		fmt.Sprintf("s3://%s/backups/%s-%s_%s.dump",
-			up.Bucket,
+			up["bucket"],
 			prefix,
 			schema, table),
 	}

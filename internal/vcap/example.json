@@ -2,7 +2,7 @@
     "s3": [
         {
             "label": "s3",
-            "provider": null,
+            "provider": "alpha-provider",
             "plan": "basic",
             "name": "backups",
             "tags": [
@@ -18,15 +18,15 @@
                 "uri": "s3://ACCESSKEYIDALPHA:SECRETACCESSKEYALPHA@s3-us-gov-alpha-1.amazonaws.com/BROKEREDBUCKETALPHA",
                 "insecure_skip_verify": false,
                 "access_key_id": "ACCESSKEYIDALPHA",
-                "secret_access_key": "SECRETACCESSKEYALPHA",
+                "secret_access_key": "SECRETACCESSKEY+ALPHA",
                 "region": "us-gov-west-1",
                 "bucket": "BROKEREDBUCKETALPHA",
                 "endpoint": "s3-us-gov-alpha-1.amazonaws.com",
                 "fips_endpoint": "s3-fips.us-gov-alpha-1.amazonaws.com",
                 "additional_buckets": []
             },
-            "syslog_drain_url": null,
-            "volume_mounts": []
+            "syslog_drain_url": "https://ALPHA.drain.url",
+            "volume_mounts": ["no_mounts"]
         },
         {
             "label": "s3",

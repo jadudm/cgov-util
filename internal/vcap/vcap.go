@@ -59,7 +59,7 @@ func GetUserProvidedCredentials(label string) (structs.UserProvidedCredentials, 
 	return nil, errors.Errorf("No credentials found for '%s'", label)
 }
 
-func GetS3Credentials(name string) (*structs.CredentialsS3, error) {
+func GetS3Credentials(name string) (map[string]string, error) {
 	var instanceSlice []structs.InstanceS3
 	err := viper.UnmarshalKey("s3", &instanceSlice)
 	if err != nil {
@@ -67,25 +67,12 @@ func GetS3Credentials(name string) (*structs.CredentialsS3, error) {
 	}
 	for _, instance := range instanceSlice {
 		if instance.Name == name {
-			all_looks_good := false
+			fmt.Println("INST", instance)
+			fmt.Println("AKI", instance.Credentials["access_key_id"])
+			fmt.Println("SAK", instance.Credentials["secret_access_key"])
+			fmt.Println("REG", instance.Credentials["region"])
 
-			// We have to have an endpoint, or the two key bits.
-			if (len(instance.Credentials.AccessKeyId) > 0) &&
-				(len(instance.Credentials.SecretAccessKey) > 0) {
-				all_looks_good = true
-			} else if len(instance.Credentials.Uri) > 0 {
-				all_looks_good = true
-			}
-
-			if len(instance.Credentials.Region) < 1 {
-				logging.Logger.Println("BACKUPS region is empty")
-				os.Exit(-1)
-			}
-			if all_looks_good {
-				return &instance.Credentials, nil
-			} else {
-				return nil, fmt.Errorf("BACKUPS no access key or endpoint")
-			}
+			return instance.Credentials, nil
 		}
 	}
 

@@ -51,7 +51,7 @@ func bucket_local_tables(source_creds *structs.CredentialsRDS, up structs.UserPr
 	}
 }
 
-func bucket_cgov_tables(source_creds *structs.CredentialsRDS, up *structs.CredentialsS3) {
+func bucket_cgov_tables(source_creds *structs.CredentialsRDS, up map[string]string) {
 	table_to_schema := util.Get_table_and_schema_names(source_creds)
 	for table, schema := range table_to_schema {
 		s3_pipe := pipes.S3(
