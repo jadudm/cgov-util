@@ -12,7 +12,12 @@ import (
 )
 
 // https://bitfieldconsulting.com/golang/scripting
-func Mc(in_pipe *script.Pipe, upc vcap.UserProvidedCredentials, prefix string, source_db string) *script.Pipe {
+func Mc(in_pipe *script.Pipe,
+	upc vcap.UserProvidedCredentials,
+	prefix string,
+	source_db string,
+	schema string,
+	table string, debug bool) *script.Pipe {
 	// // mc pipe myminio/gsa-fac-private-s3/backups/${PREFIX}-${FROM_DATABASE}.dump
 	// Always set the alias first.
 	os.Setenv("AWS_PRIVATE_ACCESS_KEY_ID", upc["access_key_id"])
@@ -33,14 +38,18 @@ func Mc(in_pipe *script.Pipe, upc vcap.UserProvidedCredentials, prefix string, s
 	cmd := []string{
 		"mc",
 		"pipe",
-		fmt.Sprintf("%s/%s/backups/%s-%s.dump",
+		fmt.Sprintf("%s/%s/backups/%s-%s-%s_%s.dump",
 			minio_alias,
 			upc["bucket"],
 			prefix,
-			source_db),
+			source_db,
+			schema, table),
 	}
 	// Combine the slice for printing and execution.
 	combined := strings.Join(cmd[:], " ")
+	if debug {
+		fmt.Printf("command: %s\n", combined)
+	}
 	logging.Logger.Printf("BACKUPS mc targeting %s", prefix)
 	return in_pipe.Exec(combined)
 }

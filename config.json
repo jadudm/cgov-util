@@ -38,7 +38,32 @@
                 "name": "postgres",
                 "password": "",
                 "port": "5432",
-                "uri": "postgres://USERNAMEINDIA:PASSWORDINDIA@host.us-gov-india-1.rds.amazonaws.com:5432/DBNAMEINDIA",
+                "uri": "postgres://postgres@127.0.0.10:5432/postgres?sslmode=disable",
+                "username": "postgres"
+            },
+            "syslog_drain_url": null,
+            "volume_mounts": []
+        },
+        {
+            "label": "fac-snapshot-db",
+            "provider": null,
+            "plan": null,
+            "name": "fac-snapshot-db",
+            "tags": [
+                "database",
+                "docker"
+            ],
+            "instance_guid": "UUIDJULIET1",
+            "instance_name": "db",
+            "binding_guid": "UUIDJULIET2",
+            "binding_name": null,
+            "credentials": {
+                "db_name": "postgres",
+                "host": "127.0.0.1",
+                "name": "postgres",
+                "password": "",
+                "port": "6543",
+                "uri": "postgres://postgres@127.0.0.10:6543/postgres?sslmode=disable",
                 "username": "postgres"
             },
             "syslog_drain_url": null,

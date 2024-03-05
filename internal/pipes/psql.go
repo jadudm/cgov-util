@@ -9,7 +9,7 @@ import (
 	"gov.gsa.fac.cgov-util/internal/vcap"
 )
 
-func Psql(in_pipe *script.Pipe, creds *vcap.CredentialsRDS) *script.Pipe {
+func Psql(in_pipe *script.Pipe, creds *vcap.CredentialsRDS, debug bool) *script.Pipe {
 	cmd := []string{
 		"psql",
 		"--no-password",
@@ -23,6 +23,9 @@ func Psql(in_pipe *script.Pipe, creds *vcap.CredentialsRDS) *script.Pipe {
 		),
 	}
 	combined := strings.Join(cmd[:], " ")
+	if debug {
+		logging.Logger.Printf("command: %s\n", combined)
+	}
 	logging.Logger.Printf("BACKUPS psql targeting %s\n", creds.DB_Name)
 	return in_pipe.Exec(combined)
 }

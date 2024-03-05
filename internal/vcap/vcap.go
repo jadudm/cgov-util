@@ -141,6 +141,7 @@ func GetRDSCreds(source_db string, dest_db string) (*CredentialsRDS, *Credential
 			source, err = GetLocalRDSCredentials(source_db)
 			if err != nil {
 				logging.Logger.Println("BACKUPS Cannot get local source credentials")
+				logging.Logger.Println(err)
 				os.Exit(-1)
 			}
 		} else {

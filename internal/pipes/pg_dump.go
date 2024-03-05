@@ -9,8 +9,38 @@ import (
 	"gov.gsa.fac.cgov-util/internal/vcap"
 )
 
+func PG_Dump_Table(creds *vcap.CredentialsRDS, schema string, table string, debug bool) *script.Pipe {
+	// Compose the command as a slice
+	cmd := []string{
+		"pg_dump",
+		"--clean",
+		"--no-password",
+		"--if-exists",
+		"--no-privileges",
+		"--no-owner",
+		"--format plain",
+		"--table",
+		fmt.Sprintf("%s.%s", schema, table),
+		"--dbname",
+		fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
+			creds.Username,
+			creds.Password,
+			creds.Host,
+			creds.Port,
+			creds.DB_Name,
+		),
+	}
+	// Combine the slice for printing and execution.
+	combined := strings.Join(cmd[:], " ")
+	if debug {
+		fmt.Printf("command: %s\n", combined)
+	}
+	logging.Logger.Printf("BACKUPS pg_dump targeting %s\n", creds.DB_Name)
+	return script.Exec(combined)
+}
+
 // https://bitfieldconsulting.com/golang/scripting
-func PG_Dump(creds *vcap.CredentialsRDS) *script.Pipe {
+func PG_Dump(creds *vcap.CredentialsRDS, debug bool) *script.Pipe {
 	// Compose the command as a slice
 	cmd := []string{
 		"pg_dump",
@@ -31,7 +61,9 @@ func PG_Dump(creds *vcap.CredentialsRDS) *script.Pipe {
 	}
 	// Combine the slice for printing and execution.
 	combined := strings.Join(cmd[:], " ")
-	fmt.Printf("command: %s\n", combined)
+	if debug {
+		fmt.Printf("command: %s\n", combined)
+	}
 	logging.Logger.Printf("BACKUPS pg_dump targeting %s\n", creds.DB_Name)
 	return script.Exec(combined)
 }
