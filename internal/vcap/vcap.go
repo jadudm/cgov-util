@@ -66,19 +66,6 @@ func GetS3Credentials(name string) (*structs.CredentialsS3, error) {
 	}
 	for _, instance := range instanceSlice {
 		if instance.Name == name {
-			// We have to have the three keys of destiny.
-			if len(instance.Credentials.AccessKeyId) < 1 {
-				logging.Logger.Println("BACKUPS access_key_id is empty")
-				os.Exit(-1)
-			}
-			if len(instance.Credentials.SecretAccessKey) < 1 {
-				logging.Logger.Println("BACKUPS secret_access_key is empty")
-				os.Exit(-1)
-			}
-			if len(instance.Credentials.Region) < 1 {
-				logging.Logger.Println("BACKUPS region is empty")
-				os.Exit(-1)
-			}
 			return &instance.Credentials, nil
 		}
 	}

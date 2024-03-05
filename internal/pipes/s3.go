@@ -10,24 +10,21 @@ import (
 	"gov.gsa.fac.cgov-util/internal/util"
 )
 
-// https://bitfieldconsulting.com/golang/scripting
+// For reasons that are unclear, the access key id and secret key
+// are coming through from VCAP empty. But, the endpoint is not.
+// This makes no sense.
 func S3(in_pipe *script.Pipe,
 	up *structs.CredentialsS3,
 	prefix string,
 	source_db string,
 	schema string, table string) *script.Pipe {
-	// os.Setenv("AWS_ACCESS_KEY_ID", up.AccessKeyId)
-	// os.Setenv("AWS_SECRET_ACCESS_KEY", up.SecretAccessKey)
-	// os.Setenv("AWS_DEFAULT_REGION", up.Region)
-
 	// https://serverfault.com/questions/886562/streaming-postgresql-pg-dump-to-s3
 	cmd := []string{
-		fmt.Sprintf("AWS_ACCESS_KEY_ID='%s'", up.AccessKeyId),
-		fmt.Sprintf("AWS_SECRET_ACCESS_KEY='%s'", up.SecretAccessKey),
-		fmt.Sprintf("AWS_DEFAULT_REGION='%s'", up.Region),
 		"aws",
 		"s3",
 		"cp",
+		"--endpoint-url",
+		up.Endpoint,
 		"-",
 		fmt.Sprintf("s3://%s/backups/%s-%s_%s.dump",
 			up.Bucket,
