@@ -10,19 +10,19 @@ import (
 
 	"github.com/spf13/cobra"
 	"gov.gsa.fac.cgov-util/internal/logging"
-	"gov.gsa.fac.cgov-util/internal/structs"
 
 	vcap "gov.gsa.fac.cgov-util/internal/vcap"
 )
 
-func get_row_count(creds *structs.CredentialsRDS, table string) int {
+func get_row_count(creds vcap.Credentials, table string) int {
 	var count int
 	// FIXME: Not sure if `disable` is correct for RDS sslmode.
 	connStr := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
-		creds.Username,
-		creds.Password,
-		creds.Host,
-		creds.DB_Name)
+		creds.Get("username").String(),
+		creds.Get("password").String(),
+		creds.Get("host").String(),
+		creds.Get("db_name").String(),
+	)
 	db, _ := sql.Open("postgres", connStr)
 	defer db.Close()
 	row := db.QueryRow(fmt.Sprintf("SELECT count(*) FROM %s", table))
@@ -32,7 +32,7 @@ func get_row_count(creds *structs.CredentialsRDS, table string) int {
 	return count
 }
 
-func check_results(source *structs.CredentialsRDS, dest *structs.CredentialsRDS, tables []string) {
+func check_results(source vcap.Credentials, dest vcap.Credentials, tables []string) {
 	// FIXME: These won't exist in the VCAP_SERVICES version
 	// of the config. We'll have to always... load both?
 	// There needs to be a way to configure this in the remote env.
@@ -65,7 +65,16 @@ Expects a space-separated list of table names as arguments.
 `,
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		source_creds, dest_creds := vcap.GetRDSCreds(SourceDB, DestinationDB)
+		source_creds, err := vcap.GetRDSCredentials(SourceDB)
+		if err != nil {
+			logging.Logger.Printf("CGOVUTIL cannot get source creds")
+			os.Exit(-1)
+		}
+		dest_creds, err := vcap.GetRDSCredentials(DestinationDB)
+		if err != nil {
+			logging.Logger.Printf("CGOVUTIL cannot get dest creds")
+			os.Exit(-1)
+		}
 		check_results(source_creds, dest_creds, args)
 
 	},

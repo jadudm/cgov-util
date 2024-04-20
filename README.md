@@ -54,3 +54,5 @@ You can change the local DB values in `config.yaml` to reflect your config.
 
 In a remote environment, the variable `VCAP_SERVICES` is referenced to extract values.
 
+## adding a new command
+

@@ -8,48 +8,44 @@ import (
 	"github.com/bitfield/script"
 	"github.com/google/uuid"
 	"gov.gsa.fac.cgov-util/internal/logging"
-	"gov.gsa.fac.cgov-util/internal/structs"
 	"gov.gsa.fac.cgov-util/internal/util"
+	"gov.gsa.fac.cgov-util/internal/vcap"
 )
 
 // https://bitfieldconsulting.com/golang/scripting
 func Mc(in_pipe *script.Pipe,
-	upc structs.UserProvidedCredentials,
-	prefix string,
-	source_db string,
-	schema string,
-	table string) *script.Pipe {
+	creds vcap.Credentials,
+	path string) *script.Pipe {
 	// // mc pipe myminio/gsa-fac-private-s3/backups/${PREFIX}-${FROM_DATABASE}.dump
 	// Always set the alias first.
-	os.Setenv("AWS_PRIVATE_ACCESS_KEY_ID", upc["access_key_id"])
-	os.Setenv("AWS_PRIVATE_SECRET_ACCESS_KEY", upc["secret_access_key"])
+	os.Setenv("AWS_PRIVATE_ACCESS_KEY_ID", creds.Get("access_key_id").String())
+	os.Setenv("AWS_PRIVATE_SECRET_ACCESS_KEY", creds.Get("secret_access_key").String())
 
 	minio_alias := fmt.Sprintf("minio_alias_%s", uuid.New())
 
 	set_alias := []string{
 		"mc", "alias", "set", minio_alias,
-		upc["endpoint"],
-		upc["admin_username"],
-		upc["admin_password"],
+		creds.Get("endpoint").String(),
+		creds.Get("admin_username").String(),
+		creds.Get("admin_password").String(),
 	}
 	sa_combined := strings.Join(set_alias[:], " ")
-	logging.Logger.Printf("BACKUPS Running `%s`\n", sa_combined)
+	logging.Logger.Printf("MC Running `%s`\n", sa_combined)
 	script.Exec(sa_combined).Stdout()
 
 	cmd := []string{
 		"mc",
 		"pipe",
-		fmt.Sprintf("%s/%s/backups/%s-%s_%s.dump",
+		fmt.Sprintf("%s/%s/%s",
 			minio_alias,
-			upc["bucket"],
-			prefix,
-			schema, table),
+			creds.Get("bucket").String(),
+			path),
 	}
 	// Combine the slice for printing and execution.
 	combined := strings.Join(cmd[:], " ")
 	if util.IsDebugLevel("DEBUG") {
 		fmt.Printf("command: %s\n", combined)
 	}
-	logging.Logger.Printf("BACKUPS mc targeting %s", prefix)
+	logging.Logger.Printf("MC mc targeting %s", path)
 	return in_pipe.Exec(combined)
 }

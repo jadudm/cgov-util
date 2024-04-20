@@ -1,142 +1,82 @@
 package vcap
 
 import (
-	"bytes"
 	"fmt"
+	"io/ioutil"
 	"os"
-
-	"golang.org/x/exp/slices"
+	"path/filepath"
 
 	"github.com/pkg/errors"
-	"github.com/spf13/viper"
+	"github.com/tidwall/gjson"
 	"gov.gsa.fac.cgov-util/internal/logging"
-	"gov.gsa.fac.cgov-util/internal/structs"
-
 	"gov.gsa.fac.cgov-util/internal/util"
 )
 
-func GetRDSCredentials(label string) (*structs.CredentialsRDS, error) {
-	var instanceSlice []structs.InstanceRDS
-	err := viper.UnmarshalKey("aws-rds", &instanceSlice)
-	if err != nil {
-		logging.Logger.Println("Could not unmarshal aws-rds from VCAP_SERVICES")
-	}
-	for _, instance := range instanceSlice {
-		if instance.Name == label {
-			return &instance.Credentials, nil
-		}
-	}
-	return nil, errors.Errorf("No credentials found for '%s'", label)
+//var vcap *gjson.Result = nil
+
+// Alias
+// type A = B
+// New type
+// type A B
+type Credentials = gjson.Result
+
+type VcapServices struct {
+	Source string
+	VCAP   gjson.Result
 }
 
-// These are hardcoded to match the FAC stack.
-func GetLocalRDSCredentials(label string) (*structs.CredentialsRDS, error) {
-	var instanceSlice []structs.InstanceRDS
-	err := viper.UnmarshalKey("aws-rds", &instanceSlice)
-	if err != nil {
-		logging.Logger.Println("Could not unmarshal aws-rds from VCAP_SERVICES")
-	}
-	for _, instance := range instanceSlice {
-		if instance.Name == label {
-			return &instance.Credentials, nil
-		}
-	}
-	return nil, errors.Errorf("No credentials found for '%s'", label)
-}
+var VCS *VcapServices = nil
 
-// Returns a map, not a pointer to a structure
-func GetUserProvidedCredentials(label string) (structs.UserProvidedCredentials, error) {
-	var instanceSlice []structs.UserProvided
-	err := viper.UnmarshalKey("user-provided", &instanceSlice)
-	if err != nil {
-		logging.Logger.Println("Could not unmarshal aws-rds from VCAP_SERVICES")
-	}
-	for _, instance := range instanceSlice {
-		if instance.Label == label {
-			return instance.Credentials, nil
-		}
-	}
-	return nil, errors.Errorf("No credentials found for '%s'", label)
-}
+func (vcs *VcapServices) GetCredentials(service string, name string) (Credentials, error) {
+	query_string := fmt.Sprintf("%s.#(name==%s).credentials", service, name)
 
-func GetS3Credentials(name string) (map[string]string, error) {
-	var instanceSlice []structs.InstanceS3
-	err := viper.UnmarshalKey("s3", &instanceSlice)
-	if err != nil {
-		logging.Logger.Println("Could not unmarshal s3 from VCAP_SERVICES")
-	}
-	for _, instance := range instanceSlice {
-		if instance.Name == name {
-			fmt.Println("INST", instance)
-			fmt.Println("AKI", instance.Credentials["access_key_id"])
-			fmt.Println("SAK", instance.Credentials["secret_access_key"])
-			fmt.Println("REG", instance.Credentials["region"])
-
-			return instance.Credentials, nil
-		}
-	}
-
-	return nil, errors.Errorf("No credentials found for '%s'", name)
-}
-
-func GetRDSCreds(source_db string, dest_db string) (*structs.CredentialsRDS, *structs.CredentialsRDS) {
-	var source *structs.CredentialsRDS
-	var dest *structs.CredentialsRDS
-	var err error
-
-	if slices.Contains([]string{"LOCAL", "TESTING"}, os.Getenv("ENV")) {
-		if source_db != "" {
-			source, err = GetLocalRDSCredentials(source_db)
-			if err != nil {
-				logging.Logger.Println("BACKUPS Cannot get local source credentials")
-				logging.Logger.Println(err)
-				os.Exit(-1)
-			}
-		} else {
-			source = nil
-		}
-		if dest_db != "" {
-			dest, err = GetLocalRDSCredentials(dest_db)
-			if err != nil {
-				logging.Logger.Println("BACKUPS Cannot get local dest credentials")
-				os.Exit(-1)
-			}
-		} else {
-			dest = nil
-		}
-
+	r := vcs.VCAP.Get(query_string)
+	if r.Exists() {
+		return Credentials(r), nil
 	} else {
-		if source_db != "" {
-			source, err = GetRDSCredentials(source_db)
-			if err != nil {
-				logging.Logger.Println("BACKUPS Cannot get RDS source credentials")
-				os.Exit(-1)
-			}
-		} else {
-			source = nil
-		}
-		if dest_db != "" {
-			dest, err = GetRDSCredentials(dest_db)
-			if err != nil {
-				logging.Logger.Println("BACKUPS Cannot get RDS dest credentials")
-				os.Exit(-1)
-			}
-		} else {
-			dest = nil
-		}
+		return Credentials{}, errors.Errorf("No <%s> credentials found for '%s'", service, name)
 	}
-
-	return source, dest
 }
 
-func ReadVCAPConfig() {
+func ReadVCAPConfig() *VcapServices {
 	// Remotely, read it in from the VCAP_SERVICES env var, which will
 	// provide a large JSON structure.
-	viper.SetConfigType("json")
-	vcap := os.Getenv("VCAP_SERVICES")
+	vcap_string := os.Getenv("VCAP_SERVICES")
 	if util.IsDebugLevel("DEBUG") {
-		logging.Logger.Printf("---- VCAP ----\n%s\n---- END VCAP ----\n", vcap)
+		logging.Logger.Printf("---- VCAP ----\n%s\n---- END VCAP ----\n", vcap_string)
+	}
+	json := gjson.Parse(vcap_string)
+	vcs := VcapServices{
+		Source: "env",
+		VCAP:   json,
+	}
+	VCS = &vcs
+	return VCS
+}
+
+func ReadVCAPConfigFile(filename string) *VcapServices {
+	fp := ""
+	_, err := os.Open(filename)
+	if errors.Is(err, os.ErrNotExist) {
+		_, err = os.Open(filepath.Join(os.Getenv("HOME"), ".fac", filename))
+		if errors.Is(err, os.ErrNotExist) {
+			fmt.Println("CGOVUTIL Cannot find config. Exiting.")
+		} else {
+			fp = filepath.Join(os.Getenv("HOME"), ".fac", filename)
+		}
+	} else {
+		fp = filename
 	}
 
-	viper.ReadConfig(bytes.NewBufferString(vcap))
+	bytes, err := ioutil.ReadFile(fp)
+	if err != nil {
+		logging.Logger.Printf("CGOVUTIL could not load config from file.")
+		os.Exit(-1)
+	}
+	json := gjson.ParseBytes(bytes)
+	VCS = &VcapServices{
+		Source: filename,
+		VCAP:   json,
+	}
+	return VCS
 }

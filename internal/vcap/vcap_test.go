@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-var db_vcap = `{
+var test_vcap = `{
     "s3": [],
     "user-provided": [
         {
@@ -83,58 +83,63 @@ var db_vcap = `{
 
 func TestReadVCAP(t *testing.T) {
 	// Load a test string into the env.
-	os.Setenv("VCAP_SERVICES", db_vcap)
+	os.Setenv("VCAP_SERVICES", test_vcap)
 	// Read the VCAP config.
-	ReadVCAPConfig()
+	vcap := ReadVCAPConfig()
 	// Check to see if we can find the source DB
-	creds, err := GetRDSCredentials("fac-db")
+	creds, err := vcap.GetCredentials("aws-rds", "fac-db")
 	if err != nil {
 		t.Error("Could not read fac-db credentials from env.")
 	}
-	if creds.DB_Name != "the-source-db-name" {
-		t.Error("Did not get fac-db db_name")
+
+	if creds.Get("db_name").String() != "the-source-db-name" {
+		t.Error("Did not get fac-db name")
 	}
 	// How about the dest DB?
-	creds, err = GetRDSCredentials("fac-snapshot-db")
+	creds, err = vcap.GetCredentials("aws-rds", "fac-snapshot-db")
 	if err != nil {
 		t.Error("Could not read fac-db credentials from env.")
 	}
-	if creds.DB_Name != "the-dest-db-name" {
-		t.Error("Did not get fac-db db_name")
+	if creds.Get("db_name").String() != "the-dest-db-name" {
+		t.Error("Did not get fac-db name")
 	}
 }
 
 func TestReadUserProvided(t *testing.T) {
 	// Load a test string into the env.
-	os.Setenv("VCAP_SERVICES", db_vcap)
+	os.Setenv("VCAP_SERVICES", test_vcap)
 	// Read the VCAP config.
-	ReadVCAPConfig()
-	creds, err := GetUserProvidedCredentials("mc")
+	vcap := ReadVCAPConfig()
+	creds, err := vcap.GetCredentials("user-provided", "backups")
 	if err != nil {
 		t.Error("Could not read user-provided credentials from env.")
 	}
-	_, ok := creds["admin_username"]
-	if !ok {
+	r := creds.Get("admin_username")
+	if !r.Exists() {
 		t.Error("Could not find a username")
 	}
 }
 
-func TestReadS3(t *testing.T) {
-	buffer, err := ioutil.ReadFile("example.json")
+func setVcapToFile(t *testing.T, file string) *VcapServices {
+	buffer, err := ioutil.ReadFile(file)
 	if err != nil {
 		t.Error("Could not read example.json")
 	}
 	os.Setenv("VCAP_SERVICES", string(buffer))
-	ReadVCAPConfig()
-
-	creds, err := GetS3Credentials("backups")
+	return ReadVCAPConfig()
+}
+func TestReadS3(t *testing.T) {
+	vcap := setVcapToFile(t, "example.json")
+	creds, err := vcap.GetCredentials("s3", "backups")
 	if err != nil {
 		t.Error("Could not read backups credentials from s3.")
 	}
-	if creds["access_key_id"] != "ACCESSKEYIDALPHA" {
+	if creds.Get("access_key_id").String() != "ACCESSKEYIDALPHA" {
+		t.Logf("AccessKeyId: %v", creds.Get("secret_access_key").String())
 		t.Error("Did not get s3 access key ACCESSKEYIDALPHA")
 	}
-	if creds["secret_access_key"] != "SECRETACCESSKEY+ALPHA" {
+	if creds.Get("secret_access_key").String() != "SECRETACCESSKEY+ALPHA" {
+		t.Logf("SecretAccessKey: %v", creds.Get("secret_access_key").String())
 		t.Error("Did not get s3 secret key SECRETACCESSKEY+ALPHA")
 	}
 }

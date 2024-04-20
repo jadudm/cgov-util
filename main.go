@@ -4,17 +4,13 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"golang.org/x/exp/slices"
 
-	"github.com/spf13/viper"
 	"gov.gsa.fac.cgov-util/cmd"
 	"gov.gsa.fac.cgov-util/internal/vcap"
 )
-
-var SHA1 string
 
 // Useful documentation for people new to Go, and
 // related to modules in this command.
@@ -28,25 +24,17 @@ var SHA1 string
 // Looks for config.yaml in the same directory as the app.
 // Optionally, the config can be in `$HOME/.fac/config.yaml`
 func readConfig() {
-	// Pass down the SHA
-	cmd.SHA1 = SHA1
 	// Do the right thing in the right env.
 	if slices.Contains([]string{"LOCAL", "TESTING"}, os.Getenv("ENV")) {
 		// Locally, load the file from one of two places.
-		viper.SetConfigName("config")
-		viper.SetConfigType("json")
-		viper.AddConfigPath("$HOME/.fac")
-		viper.AddConfigPath(".")
-		err := viper.ReadInConfig()
-		if err != nil {
-			panic(fmt.Errorf("fatal error config file: %w", err))
-		}
+		vcap.ReadVCAPConfigFile("config.json")
 	} else {
 		vcap.ReadVCAPConfig()
 	}
 }
 
 func main() {
+
 	readConfig()
 	cmd.Execute()
 }

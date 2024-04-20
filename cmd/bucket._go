@@ -4,6 +4,7 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
+	"database/sql"
 	"os"
 
 	"golang.org/x/exp/slices"
@@ -11,7 +12,6 @@ import (
 	"github.com/spf13/cobra"
 	"gov.gsa.fac.cgov-util/internal/logging"
 	"gov.gsa.fac.cgov-util/internal/pipes"
-	"gov.gsa.fac.cgov-util/internal/structs"
 	"gov.gsa.fac.cgov-util/internal/util"
 
 	vcap "gov.gsa.fac.cgov-util/internal/vcap"
@@ -33,14 +33,44 @@ var backup_tag string
 // 	}
 // }
 
-func bucket_local_tables(source_creds *structs.CredentialsRDS, up structs.UserProvidedCredentials) {
-	table_to_schema := util.Get_table_and_schema_names(source_creds)
+func get_table_and_schema_names(source_creds vcap.Credentials) map[string]string {
+	// Do this table-by-table for RAM reasons.
+	db, err := sql.Open("postgres", source_creds.Get("uri").String())
+	if err != nil {
+		logging.Logger.Println("BACKUPS could not connect to DB for table-by-table dump")
+		logging.Logger.Printf("BACKUPS %s\n", err)
+		os.Exit(-1)
+	}
+
+	tables, err := db.Query("SELECT schemaname, tablename FROM pg_tables WHERE schemaname = 'public'")
+	if err != nil {
+		logging.Logger.Println("BACKUPS could not get table names for table-by-table dump")
+		logging.Logger.Printf("BACKUPS %s\n", err)
+		os.Exit(-1)
+	}
+
+	table_names := make(map[string]string, 0)
+
+	for tables.Next() {
+		var table string
+		var schema string
+		if err := tables.Scan(&schema, &table); err != nil {
+			logging.Logger.Println("BACKUPS could not scan table names in SELECT")
+			os.Exit(-1)
+		}
+		table_names[table] = schema
+	}
+
+	return table_names
+}
+func bucket_local_tables(source_creds vcap.Credentials, up vcap.Credentials) {
+	table_to_schema := get_table_and_schema_names(source_creds)
 	for table, schema := range table_to_schema {
 		mc_pipe := pipes.Mc(
 			pipes.PG_Dump_Table(source_creds, schema, table),
 			up,
 			backup_tag,
-			source_creds.DB_Name,
+			source_creds.Get("db_name").String(),
 			schema, table,
 		)
 		mc_pipe.Wait()
@@ -51,8 +81,8 @@ func bucket_local_tables(source_creds *structs.CredentialsRDS, up structs.UserPr
 	}
 }
 
-func bucket_cgov_tables(source_creds *structs.CredentialsRDS, up map[string]string) {
-	table_to_schema := util.Get_table_and_schema_names(source_creds)
+func bucket_cgov_tables(source_creds vcap.Credentials, up vcap.Credentials) {
+	table_to_schema := get_table_and_schema_names(source_creds)
 	for table, schema := range table_to_schema {
 		s3_pipe := pipes.S3(
 			pipes.PG_Dump_Table(source_creds, schema, table),
@@ -80,7 +110,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		source_creds, _ := vcap.GetRDSCreds(SourceDB, "")
+		source_creds, _ := vcap.GetRDSCredentials(SourceDB)
 		if slices.Contains([]string{"LOCAL", "TESTING"}, os.Getenv("ENV")) {
 			up, _ := vcap.GetUserProvidedCredentials("mc")
 			bucket_local_tables(source_creds, up)
