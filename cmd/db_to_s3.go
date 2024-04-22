@@ -6,9 +6,7 @@ package cmd
 import (
 	"database/sql"
 	"fmt"
-	"net/url"
 	"os"
-	"path/filepath"
 	"slices"
 
 	_ "github.com/lib/pq"
@@ -18,13 +16,6 @@ import (
 	"gov.gsa.fac.cgov-util/internal/pipes"
 
 	"gov.gsa.fac.cgov-util/internal/vcap"
-)
-
-var (
-	db     string
-	bucket string
-	s3path string
-	key    string
 )
 
 func get_table_and_schema_names(source_creds vcap.Credentials) map[string]string {
@@ -57,7 +48,8 @@ func get_table_and_schema_names(source_creds vcap.Credentials) map[string]string
 
 	return table_names
 }
-func bucket_local_tables(source_creds vcap.Credentials, up vcap.Credentials, table_names []string) {
+
+func tables_to_local_bucket(source_creds vcap.Credentials, up vcap.Credentials, table_names []string) {
 	var BACKUP_ALL = len(table_names) == 0
 
 	logging.Logger.Printf("DUMPDBTOS3 backing up from %s to %s\n",
@@ -71,7 +63,7 @@ func bucket_local_tables(source_creds vcap.Credentials, up vcap.Credentials, tab
 		// 1. When it is in a list of names we want backed up, or
 		// 2. When there are no names in the list (backup all).
 		if slices.Contains(table_names, table) || BACKUP_ALL {
-			mc_pipe := pipes.Mc(
+			mc_pipe := pipes.McWrite(
 				pipes.PG_Dump_Table(source_creds, schema, table),
 				up,
 				fmt.Sprintf("%s%s/%s-%s.dump", bucket, key, schema, table),
@@ -86,13 +78,13 @@ func bucket_local_tables(source_creds vcap.Credentials, up vcap.Credentials, tab
 
 }
 
-func bucket_cgov_tables(source_creds vcap.Credentials, up vcap.Credentials, table_names []string) {
+func tables_to_cgov_bucket(source_creds vcap.Credentials, up vcap.Credentials, table_names []string) {
 	var BACKUP_ALL = len(table_names) == 0
 
 	table_to_schema := get_table_and_schema_names(source_creds)
 	for table, schema := range table_to_schema {
 		if slices.Contains(table_names, table) || BACKUP_ALL {
-			s3_pipe := pipes.S3(
+			s3_pipe := pipes.S3Write(
 				pipes.PG_Dump_Table(source_creds, schema, table),
 				up,
 				fmt.Sprintf("%s%s/%s-%s.dump", bucket, key, schema, table),
@@ -107,8 +99,8 @@ func bucket_cgov_tables(source_creds vcap.Credentials, up vcap.Credentials, tabl
 }
 
 // dumpDbToS3Cmd represents the dumpDbToS3 command
-var dumpDbToS3Cmd = &cobra.Command{
-	Use:   "dumpDbToS3",
+var DbToS3Cmd = &cobra.Command{
+	Use:   "db_to_s3",
 	Args:  cobra.ArbitraryArgs,
 	Short: "Dumps a full database to a file in S3",
 	Long: `Dumps a full database to a file in S3
@@ -116,17 +108,7 @@ Takes 0 or more table names as arguments. If no arguments are
 provided, all tables are backed up.
 	`,
 	Run: func(cmd *cobra.Command, table_names []string) {
-		u, err := url.Parse(s3path)
-		if err != nil {
-			logging.Logger.Printf("DUMPDBTOS3 could not parse s3 path: %s", s3path)
-			os.Exit(logging.S3_PATH_PARSE_ERROR)
-		}
-		if u.Scheme != "s3" {
-			logging.Logger.Printf("DUMPDBTOS3 does not look like an S3 path (e.g. `s3://`): %s", s3path)
-			os.Exit(logging.S3_PATH_PARSE_ERROR)
-		}
-		bucket = filepath.Clean(u.Host)
-		key = filepath.Clean(u.Path)
+		parseS3Path()
 
 		// Check that we can get credentials.
 		db_creds, err := vcap.VCS.GetCredentials("aws-rds", db)
@@ -144,7 +126,7 @@ provided, all tables are backed up.
 				logging.Logger.Printf("DUMPDBTOS3 could not get minio credentials")
 				os.Exit(logging.COULD_NOT_FIND_CREDENTIALS)
 			}
-			bucket_local_tables(db_creds, up, table_names)
+			tables_to_local_bucket(db_creds, up, table_names)
 		case "DEV":
 			fallthrough
 		case "STAGING":
@@ -155,19 +137,18 @@ provided, all tables are backed up.
 				logging.Logger.Printf("DUMPDBTOS3 could not get s3 credentials")
 				os.Exit(logging.COULD_NOT_FIND_CREDENTIALS)
 			}
-			bucket_cgov_tables(db_creds, up, table_names)
+			tables_to_cgov_bucket(db_creds, up, table_names)
 
 		}
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(dumpDbToS3Cmd)
-	dumpDbToS3Cmd.Flags().StringVarP(&db, "db", "", "", "source database label")
-	dumpDbToS3Cmd.Flags().StringVarP(&s3path, "s3path", "", "", "destination path")
+	rootCmd.AddCommand(DbToS3Cmd)
+	DbToS3Cmd.Flags().StringVarP(&db, "db", "", "", "source database label")
+	DbToS3Cmd.Flags().StringVarP(&s3path, "s3path", "", "", "destination path")
 
-	dumpDbToS3Cmd.MarkFlagRequired("db")
-	dumpDbToS3Cmd.MarkFlagRequired("bucket")
-	dumpDbToS3Cmd.MarkFlagRequired("s3path")
+	DbToS3Cmd.MarkFlagRequired("db")
+	DbToS3Cmd.MarkFlagRequired("s3path")
 
 }

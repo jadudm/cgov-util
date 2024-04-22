@@ -4,17 +4,17 @@ Copyright © 2024 NAME HERE <EMAIL ADDRESS>
 package cmd
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
 )
 
 var (
-	SourceDB          string
-	DestinationDB     string
-	DestinationBucket string
-	SHA1              string
+	db       string
+	bucket   string
+	s3path   string
+	key      string
+	truncate string
 
 	// rootCmd represents the base command when called without any subcommands
 	rootCmd = &cobra.Command{
@@ -22,10 +22,7 @@ var (
 		Short: "A tool for backing up, testing, and restoring",
 		Long:  ``,
 		Run: func(cmd *cobra.Command, args []string) {
-			ver, _ := cmd.Flags().GetBool("sha")
-			if ver {
-				fmt.Println(SHA1)
-			}
+
 		},
 	}
 )
