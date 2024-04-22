@@ -1,0 +1,9 @@
+package logging
+
+const S3_PATH_PARSE_ERROR = -10
+
+const COULD_NOT_FIND_CREDENTIALS = -20
+
+const PIPE_FAILURE = -30
+
+const DB_SCHEMA_SCAN_FAILURE = -40
