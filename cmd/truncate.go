@@ -32,7 +32,7 @@ func truncate_tables(db_creds vcap.Credentials, tables []string) {
 				os.Exit(logging.DB_TRUNCATE_ERROR)
 			}
 
-			stdout, err := truncate_pipe.String()
+			stdout, _ := truncate_pipe.String()
 			if strings.Contains(stdout, "ERROR") {
 				logging.Logger.Printf("TRUNCATE database reported an error\n")
 				logging.Logger.Println(stdout)
