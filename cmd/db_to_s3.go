@@ -8,12 +8,14 @@ import (
 	"fmt"
 	"os"
 	"slices"
+	"strings"
 
 	_ "github.com/lib/pq"
 
 	"github.com/spf13/cobra"
 	"gov.gsa.fac.cgov-util/internal/logging"
 	"gov.gsa.fac.cgov-util/internal/pipes"
+	"gov.gsa.fac.cgov-util/internal/structs"
 
 	"gov.gsa.fac.cgov-util/internal/vcap"
 )
@@ -22,15 +24,15 @@ func get_table_and_schema_names(source_creds vcap.Credentials) map[string]string
 	// Do this table-by-table for RAM reasons.
 	db, err := sql.Open("postgres", source_creds.Get("uri").String())
 	if err != nil {
-		logging.Logger.Println("DUMPDBTOS3 could not connect to DB for table-by-table dump")
-		logging.Logger.Printf("DUMPDBTOS3 %s\n", err)
+		logging.Logger.Println("DBTOS3 could not connect to DB for table-by-table dump")
+		logging.Logger.Printf("DBTOS3 %s\n", err)
 		os.Exit(logging.DB_SCHEMA_SCAN_FAILURE)
 	}
 
 	tables, err := db.Query("SELECT schemaname, tablename FROM pg_tables WHERE schemaname = 'public'")
 	if err != nil {
-		logging.Logger.Println("DUMPDBTOS3 could not get table names for table-by-table dump")
-		logging.Logger.Printf("DUMPDBTOS3 %s\n", err)
+		logging.Logger.Println("DBTOS3 could not get table names for table-by-table dump")
+		logging.Logger.Printf("DBTOS3 %s\n", err)
 		os.Exit(logging.DB_SCHEMA_SCAN_FAILURE)
 	}
 
@@ -40,7 +42,7 @@ func get_table_and_schema_names(source_creds vcap.Credentials) map[string]string
 		var table string
 		var schema string
 		if err := tables.Scan(&schema, &table); err != nil {
-			logging.Logger.Println("DUMPDBTOS3 could not scan table names in SELECT")
+			logging.Logger.Println("DBTOS3 could not scan table names in SELECT")
 			os.Exit(logging.DB_SCHEMA_SCAN_FAILURE)
 		}
 		table_names[table] = schema
@@ -49,12 +51,17 @@ func get_table_and_schema_names(source_creds vcap.Credentials) map[string]string
 	return table_names
 }
 
-func tables_to_local_bucket(source_creds vcap.Credentials, up vcap.Credentials, table_names []string) {
+func tables_to_local_bucket(
+	source_creds vcap.Credentials,
+	up_creds vcap.Credentials,
+	s3path *structs.S3Path,
+	table_names []string) {
 	var BACKUP_ALL = len(table_names) == 0
 
-	logging.Logger.Printf("DUMPDBTOS3 backing up from %s to %s\n",
+	logging.Logger.Printf("DBTOS3 backing up from %s to %s/%s\n",
 		source_creds.Get("name").String(),
-		up.Get("name").String(),
+		s3path.Bucket,
+		s3path.Key,
 	)
 	table_to_schema := get_table_and_schema_names(source_creds)
 
@@ -65,12 +72,12 @@ func tables_to_local_bucket(source_creds vcap.Credentials, up vcap.Credentials, 
 		if slices.Contains(table_names, table) || BACKUP_ALL {
 			mc_pipe := pipes.McWrite(
 				pipes.PG_Dump_Table(source_creds, schema, table),
-				up,
-				fmt.Sprintf("%s%s/%s-%s.dump", bucket, key, schema, table),
+				up_creds,
+				fmt.Sprintf("%s%s/%s-%s.dump", s3path.Bucket, s3path.Key, schema, table),
 			)
-			mc_pipe.Wait()
-			if err := mc_pipe.Error(); err != nil {
-				logging.Logger.Println("DUMPDBTOS3 `dump | mc` pipe failed")
+			stdout, _ := mc_pipe.String()
+			if strings.Contains(stdout, "ERR") {
+				logging.Logger.Println("DBTOS3 `dump | mc` pipe failed")
 				os.Exit(logging.PIPE_FAILURE)
 			}
 		}
@@ -78,7 +85,11 @@ func tables_to_local_bucket(source_creds vcap.Credentials, up vcap.Credentials, 
 
 }
 
-func tables_to_cgov_bucket(source_creds vcap.Credentials, up vcap.Credentials, table_names []string) {
+func tables_to_cgov_bucket(
+	source_creds vcap.Credentials,
+	s3_creds vcap.Credentials,
+	s3path *structs.S3Path,
+	table_names []string) {
 	var BACKUP_ALL = len(table_names) == 0
 
 	table_to_schema := get_table_and_schema_names(source_creds)
@@ -86,12 +97,12 @@ func tables_to_cgov_bucket(source_creds vcap.Credentials, up vcap.Credentials, t
 		if slices.Contains(table_names, table) || BACKUP_ALL {
 			s3_pipe := pipes.S3Write(
 				pipes.PG_Dump_Table(source_creds, schema, table),
-				up,
-				fmt.Sprintf("%s%s/%s-%s.dump", bucket, key, schema, table),
+				s3_creds,
+				fmt.Sprintf("%s%s/%s-%s.dump", s3path.Bucket, s3path.Key, schema, table),
 			)
 			s3_pipe.Wait()
 			if err := s3_pipe.Error(); err != nil {
-				logging.Logger.Println("DUMPDBTOS3 `dump | s3` pipe failed")
+				logging.Logger.Println("DBTOS3 `dump | s3` pipe failed")
 				os.Exit(logging.PIPE_FAILURE)
 			}
 		}
@@ -108,12 +119,12 @@ Takes 0 or more table names as arguments. If no arguments are
 provided, all tables are backed up.
 	`,
 	Run: func(cmd *cobra.Command, table_names []string) {
-		parseS3Path()
+		s3path := parseS3Path(db_to_s3_s3path)
 
 		// Check that we can get credentials.
-		db_creds, err := vcap.VCS.GetCredentials("aws-rds", db)
+		db_creds, err := vcap.VCS.GetCredentials("aws-rds", db_to_s3_db)
 		if err != nil {
-			logging.Logger.Printf("DUMPDBTOS3 could not get DB credentials for %s", db)
+			logging.Logger.Printf("DBTOS3 could not get DB credentials for %s", db_to_s3_db)
 			os.Exit(logging.COULD_NOT_FIND_CREDENTIALS)
 		}
 
@@ -121,34 +132,35 @@ provided, all tables are backed up.
 		case "LOCAL":
 			fallthrough
 		case "TESTING":
-			up, err := vcap.VCS.GetCredentials("user-provided", bucket)
+			up_creds, err := vcap.VCS.GetCredentials("user-provided", s3path.Bucket)
 			if err != nil {
-				logging.Logger.Printf("DUMPDBTOS3 could not get minio credentials")
+				logging.Logger.Printf("DBTOS3 could not get minio credentials")
 				os.Exit(logging.COULD_NOT_FIND_CREDENTIALS)
 			}
-			tables_to_local_bucket(db_creds, up, table_names)
+			tables_to_local_bucket(db_creds, up_creds, s3path, table_names)
 		case "DEV":
 			fallthrough
 		case "STAGING":
 			fallthrough
 		case "PRODUCTION":
-			up, err := vcap.VCS.GetCredentials("aws-rds", bucket)
+			s3_creds, err := vcap.VCS.GetCredentials("s3", s3path.Bucket)
 			if err != nil {
-				logging.Logger.Printf("DUMPDBTOS3 could not get s3 credentials")
+				logging.Logger.Printf("DBTOS3 could not get s3 credentials")
 				os.Exit(logging.COULD_NOT_FIND_CREDENTIALS)
 			}
-			tables_to_cgov_bucket(db_creds, up, table_names)
+			tables_to_cgov_bucket(db_creds, s3_creds, s3path, table_names)
 
 		}
 	},
 }
 
+var (
+	db_to_s3_s3path string
+	db_to_s3_db     string
+)
+
 func init() {
 	rootCmd.AddCommand(DbToS3Cmd)
-	DbToS3Cmd.Flags().StringVarP(&db, "db", "", "", "source database label")
-	DbToS3Cmd.Flags().StringVarP(&s3path, "s3path", "", "", "destination path")
-
-	DbToS3Cmd.MarkFlagRequired("db")
-	DbToS3Cmd.MarkFlagRequired("s3path")
+	parseFlags("db_to_s3", DbToS3Cmd)
 
 }

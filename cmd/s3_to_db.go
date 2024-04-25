@@ -6,39 +6,81 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
-	"github.com/bitfield/script"
 	"github.com/spf13/cobra"
 	"gov.gsa.fac.cgov-util/internal/logging"
 	"gov.gsa.fac.cgov-util/internal/pipes"
+	"gov.gsa.fac.cgov-util/internal/structs"
 	"gov.gsa.fac.cgov-util/internal/vcap"
 )
 
-func bucket_to_local_tables(db_creds vcap.Credentials, bucket_creds vcap.Credentials) {
-
-	if truncate != "" {
-		logging.Logger.Printf("S3TODB truncating table %s\n", truncate)
-
-		truncate_pipe := pipes.Psql(script.Echo(fmt.Sprintf("TRUNCATE TABLE %s", truncate)), db_creds)
-		truncate_pipe.Wait()
-	}
+func bucket_to_local_tables(
+	db_creds vcap.Credentials,
+	bucket_creds vcap.Credentials,
+	s3path *structs.S3Path,
+) {
 
 	mc_pipe := pipes.McRead(
 		bucket_creds,
-		fmt.Sprintf("%s%s", bucket, key),
-	)
+		fmt.Sprintf("%s%s", s3path.Bucket, s3path.Key),
+	).FilterLine(func(s string) string {
+		if strings.Contains(s, "CREATE") {
+			fmt.Printf("REPLACING IN %s\n", s)
+		}
+		if strings.Contains(s, "CREATE TABLE") {
+			return strings.Replace(s, "CREATE TABLE", "CREATE TABLE IF NOT EXISTS", -1)
+		} else if strings.Contains(s, "CREATE INDEX") {
+			return strings.Replace(s, "CREATE INDEX", "CREATE INDEX IF NOT EXISTS", -1)
+		} else {
+			return s
+		}
+	})
 	psql_pipe := pipes.Psql(mc_pipe, db_creds)
 
-	psql_pipe.Wait()
-	if err := mc_pipe.Error(); err != nil {
-		logging.Logger.Println("DUMPDBTOS3 `dump | mc` pipe failed")
-		os.Exit(logging.PIPE_FAILURE)
-
+	exit_code := 0
+	stdout, _ := mc_pipe.String()
+	if strings.Contains(stdout, "ERR") {
+		logging.Logger.Printf("S3TODB `mc` reported an error\n")
+		logging.Logger.Println(stdout)
+		exit_code = logging.PIPE_FAILURE
 	}
+
+	if mc_pipe.Error() != nil {
+		logging.Logger.Println("S3TODB `dump | mc` pipe failed")
+		exit_code = logging.PIPE_FAILURE
+	}
+
+	stdout, _ = psql_pipe.String()
+	if strings.Contains(stdout, "ERR") {
+		logging.Logger.Printf("S3TODB database reported an error\n")
+		logging.Logger.Println(stdout)
+		exit_code = logging.PIPE_FAILURE
+	}
+
+	if exit_code != 0 {
+		os.Exit(exit_code)
+	}
+
 }
 
-func bucket_to_cgov_tables(source_creds vcap.Credentials, up vcap.Credentials) {
+// FIXME: need s3read...
+func bucket_to_cgov_tables(
+	s3_creds vcap.Credentials,
+	dest_db_creds vcap.Credentials,
+	s3path *structs.S3Path,
+) {
+	s3_pipe := pipes.S3Read(
+		s3_creds,
+		fmt.Sprintf("%s%s", s3path.Bucket, s3path.Key),
+	)
+	psql_pipe := pipes.Psql(s3_pipe, dest_db_creds)
 
+	psql_pipe.Wait()
+	if err := psql_pipe.Error(); err != nil {
+		logging.Logger.Println("DUMPDBTOS3 `dump | mc` pipe failed")
+		os.Exit(logging.PIPE_FAILURE)
+	}
 }
 
 // S3toDBCmd represents the S3toDB command
@@ -53,11 +95,12 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		parseS3Path()
+
+		path_struct := parseS3Path(s3_to_db_s3path)
 		// Check that we can get credentials.
-		db_creds, err := vcap.VCS.GetCredentials("aws-rds", db)
+		db_creds, err := vcap.VCS.GetCredentials("aws-rds", s3_to_db_db)
 		if err != nil {
-			logging.Logger.Printf("S3toDB could not get DB credentials for %s", db)
+			logging.Logger.Printf("S3toDB could not get DB credentials for %s", s3_to_db_db)
 			os.Exit(logging.COULD_NOT_FIND_CREDENTIALS)
 		}
 
@@ -65,35 +108,34 @@ to quickly create a Cobra application.`,
 		case "LOCAL":
 			fallthrough
 		case "TESTING":
-			bucket_creds, err := vcap.VCS.GetCredentials("user-provided", bucket)
+			bucket_creds, err := vcap.VCS.GetCredentials("user-provided", path_struct.Bucket)
 			if err != nil {
 				logging.Logger.Printf("S3TODB could not get minio credentials")
 				os.Exit(logging.COULD_NOT_FIND_CREDENTIALS)
 			}
-			bucket_to_local_tables(db_creds, bucket_creds)
+			bucket_to_local_tables(db_creds, bucket_creds, path_struct)
 		case "DEV":
 			fallthrough
 		case "STAGING":
 			fallthrough
 		case "PRODUCTION":
-			bucket_creds, err := vcap.VCS.GetCredentials("aws-rds", bucket)
+			bucket_creds, err := vcap.VCS.GetCredentials("aws-rds", path_struct.Bucket)
 			if err != nil {
 				logging.Logger.Printf("S3toDB could not get s3 credentials")
 				os.Exit(logging.COULD_NOT_FIND_CREDENTIALS)
 			}
-			bucket_to_cgov_tables(db_creds, bucket_creds)
-
+			bucket_to_cgov_tables(bucket_creds, db_creds, path_struct)
 		}
 	},
 }
 
+var (
+	s3_to_db_s3path string
+	s3_to_db_db     string
+)
+
 func init() {
 	rootCmd.AddCommand(S3toDBCmd)
-	S3toDBCmd.Flags().StringVarP(&s3path, "s3path", "", "", "destination path")
-	S3toDBCmd.Flags().StringVarP(&db, "db", "", "", "source database label")
-	S3toDBCmd.Flags().StringVarP(&truncate, "truncate", "", "", "table to truncate before load")
-
-	S3toDBCmd.MarkFlagRequired("db")
-	S3toDBCmd.MarkFlagRequired("s3path")
+	parseFlags("s3_to_db", S3toDBCmd)
 
 }

@@ -15,12 +15,12 @@ import (
 // are coming through from VCAP empty. But, the endpoint is not.
 // This makes no sense.
 func S3Write(in_pipe *script.Pipe,
-	up vcap.Credentials,
+	s3_creds vcap.Credentials,
 	path string) *script.Pipe {
 
-	os.Setenv("AWS_SECRET_ACCESS_KEY", up.Get("secret_access_key").String())
-	os.Setenv("AWS_ACCESS_KEY_ID", up.Get("access_key_id").String())
-	os.Setenv("AWS_DEFAULT_REGION", up.Get("region").String())
+	os.Setenv("AWS_SECRET_ACCESS_KEY", s3_creds.Get("secret_access_key").String())
+	os.Setenv("AWS_ACCESS_KEY_ID", s3_creds.Get("access_key_id").String())
+	os.Setenv("AWS_DEFAULT_REGION", s3_creds.Get("region").String())
 	// https://serverfault.com/questions/886562/streaming-postgresql-pg-dump-to-s3
 	cmd := []string{
 		"aws",
@@ -28,7 +28,7 @@ func S3Write(in_pipe *script.Pipe,
 		"cp",
 		"-",
 		fmt.Sprintf("s3://%s/%s",
-			up.Get("bucket").String(),
+			s3_creds.Get("bucket").String(),
 			path),
 	}
 
@@ -41,22 +41,23 @@ func S3Write(in_pipe *script.Pipe,
 	return in_pipe.Exec(combined)
 }
 
-func S3Read(in_pipe *script.Pipe,
-	up vcap.Credentials,
+func S3Read(s3_creds vcap.Credentials,
 	path string) *script.Pipe {
 
-	os.Setenv("AWS_SECRET_ACCESS_KEY", up.Get("secret_access_key").String())
-	os.Setenv("AWS_ACCESS_KEY_ID", up.Get("access_key_id").String())
-	os.Setenv("AWS_DEFAULT_REGION", up.Get("region").String())
-	// https://serverfault.com/questions/886562/streaming-postgresql-pg-dump-to-s3
+	os.Setenv("AWS_SECRET_ACCESS_KEY", s3_creds.Get("secret_access_key").String())
+	os.Setenv("AWS_ACCESS_KEY_ID", s3_creds.Get("access_key_id").String())
+	os.Setenv("AWS_DEFAULT_REGION", s3_creds.Get("region").String())
+	// NOTE: The entire change from "write" is that we pass "-" as the
+	// path in a different location. Instead of reading from STDIN, we write
+	// to STDOUT. This lets us pipe the read into another command.
 	cmd := []string{
 		"aws",
 		"s3",
 		"cp",
-		"-",
 		fmt.Sprintf("s3://%s/%s",
-			up.Get("bucket").String(),
+			s3_creds.Get("bucket").String(),
 			path),
+		"-",
 	}
 
 	// Combine the slice for printing and execution.
@@ -65,5 +66,5 @@ func S3Read(in_pipe *script.Pipe,
 	if util.IsDebugLevel("DEBUG") {
 		fmt.Printf("command: %s\n", combined)
 	}
-	return in_pipe.Exec(combined)
+	return script.Exec(combined)
 }
