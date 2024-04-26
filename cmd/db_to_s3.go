@@ -20,6 +20,11 @@ import (
 	"gov.gsa.fac.cgov-util/internal/vcap"
 )
 
+var (
+	db_to_s3_s3path string
+	db_to_s3_db     string
+)
+
 func get_table_and_schema_names(source_creds vcap.Credentials) map[string]string {
 	// Do this table-by-table for RAM reasons.
 	db, err := sql.Open("postgres", source_creds.Get("uri").String())
@@ -120,44 +125,19 @@ provided, all tables are backed up.
 	`,
 	Run: func(cmd *cobra.Command, table_names []string) {
 		s3path := parseS3Path(db_to_s3_s3path)
+		db_creds := getDBCredentials(db_to_s3_db)
+		bucket_creds := getBucketCredentials(s3path)
 
-		// Check that we can get credentials.
-		db_creds, err := vcap.VCS.GetCredentials("aws-rds", db_to_s3_db)
-		if err != nil {
-			logging.Logger.Printf("DBTOS3 could not get DB credentials for %s", db_to_s3_db)
-			os.Exit(logging.COULD_NOT_FIND_CREDENTIALS)
-		}
-
-		switch os.Getenv("ENV") {
-		case "LOCAL":
-			fallthrough
-		case "TESTING":
-			up_creds, err := vcap.VCS.GetCredentials("user-provided", s3path.Bucket)
-			if err != nil {
-				logging.Logger.Printf("DBTOS3 could not get minio credentials")
-				os.Exit(logging.COULD_NOT_FIND_CREDENTIALS)
-			}
-			tables_to_local_bucket(db_creds, up_creds, s3path, table_names)
-		case "DEV":
-			fallthrough
-		case "STAGING":
-			fallthrough
-		case "PRODUCTION":
-			s3_creds, err := vcap.VCS.GetCredentials("s3", s3path.Bucket)
-			if err != nil {
-				logging.Logger.Printf("DBTOS3 could not get s3 credentials")
-				os.Exit(logging.COULD_NOT_FIND_CREDENTIALS)
-			}
-			tables_to_cgov_bucket(db_creds, s3_creds, s3path, table_names)
-
-		}
+		ch := structs.Choice{
+			Local: func() {
+				tables_to_local_bucket(db_creds, bucket_creds, s3path, table_names)
+			},
+			Remote: func() {
+				tables_to_cgov_bucket(db_creds, bucket_creds, s3path, table_names)
+			}}
+		runLocalOrRemote(ch)
 	},
 }
-
-var (
-	db_to_s3_s3path string
-	db_to_s3_db     string
-)
 
 func init() {
 	rootCmd.AddCommand(DbToS3Cmd)
