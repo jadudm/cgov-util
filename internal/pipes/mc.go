@@ -3,6 +3,7 @@ package pipes
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/bitfield/script"
@@ -11,6 +12,14 @@ import (
 	"gov.gsa.fac.cgov-util/internal/util"
 	"gov.gsa.fac.cgov-util/internal/vcap"
 )
+
+func getExecutable() string {
+	if runtime.GOOS == "windows" {
+		return "./mc.exe"
+	} else {
+		return "mc"
+	}
+}
 
 // https://bitfieldconsulting.com/golang/scripting
 func McWrite(in_pipe *script.Pipe,
@@ -24,7 +33,7 @@ func McWrite(in_pipe *script.Pipe,
 	minio_alias := fmt.Sprintf("minio_alias_%s", uuid.New())
 
 	set_alias := []string{
-		"mc", "alias", "set", minio_alias,
+		getExecutable(), "alias", "set", minio_alias,
 		creds.Get("endpoint").String(),
 		creds.Get("admin_username").String(),
 		creds.Get("admin_password").String(),
@@ -34,7 +43,7 @@ func McWrite(in_pipe *script.Pipe,
 	script.Exec(sa_combined).Stdout()
 
 	cmd := []string{
-		"mc",
+		getExecutable(),
 		"pipe",
 		fmt.Sprintf("%s/%s/%s",
 			minio_alias,
@@ -61,7 +70,7 @@ func McRead(
 	minio_alias := fmt.Sprintf("minio_alias_%s", uuid.New())
 
 	set_alias := []string{
-		"mc", "alias", "set", minio_alias,
+		getExecutable(), "alias", "set", minio_alias,
 		creds.Get("endpoint").String(),
 		creds.Get("admin_username").String(),
 		creds.Get("admin_password").String(),
@@ -71,7 +80,7 @@ func McRead(
 	script.Exec(sa_combined).Stdout()
 
 	cmd := []string{
-		"mc",
+		getExecutable(),
 		"cat",
 		fmt.Sprintf("%s/%s/%s",
 			minio_alias,
