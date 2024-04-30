@@ -38,6 +38,8 @@ func runLocalOrRemote(funs structs.Choice) {
 		fallthrough
 	case "STAGING":
 		fallthrough
+	case "PREVIEW":
+		fallthrough
 	case "PRODUCTION":
 		funs.Remote()
 	default:
