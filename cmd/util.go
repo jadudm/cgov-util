@@ -71,6 +71,8 @@ func getBucketCredentials(s3path *structs.S3Path) vcap.Credentials {
 		fallthrough
 	case "STAGING":
 		fallthrough
+	case "PREVIEW":
+		fallthrough
 	case "PRODUCTION":
 		bucket_creds, err := vcap.VCS.GetCredentials("s3", s3path.Bucket)
 		if err != nil {
