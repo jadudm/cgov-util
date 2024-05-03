@@ -55,7 +55,7 @@ func McWrite(in_pipe *script.Pipe,
 	if util.IsDebugLevel("DEBUG") {
 		fmt.Printf("command: %s\n", combined)
 	}
-	logging.Logger.Printf("MC mc targeting %s", path)
+	logging.Logger.Printf("MC "+getExecutable()+" targeting %s", path)
 	return in_pipe.Exec(combined)
 }
 
