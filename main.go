@@ -9,6 +9,8 @@ import (
 	"golang.org/x/exp/slices"
 
 	"gov.gsa.fac.cgov-util/cmd"
+	"gov.gsa.fac.cgov-util/internal/logging"
+	"gov.gsa.fac.cgov-util/internal/util"
 	"gov.gsa.fac.cgov-util/internal/vcap"
 )
 
@@ -34,7 +36,13 @@ func readConfig() {
 }
 
 func main() {
-
+	if slices.Contains([]string{"DEV", "PREVIEW", "STAGING", "PRODUCTION"}, os.Getenv("ENV")) {
+		logging.Logger.Printf("ENV detected to be a cloud.gov environment. Installing AWS CLI.")
+		util.InstallAWS()
+	} else {
+		logging.Logger.Printf("ENV set to local, aws not necessary to install.")
+	}
 	readConfig()
+	util.SetPaths(os.Getenv("ENV"))
 	cmd.Execute()
 }
