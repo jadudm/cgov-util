@@ -12,7 +12,7 @@ import (
 
 func Psql(in_pipe *script.Pipe, creds vcap.Credentials) *script.Pipe {
 	cmd := []string{
-		"psql",
+		util.PSQL_path,
 		"--no-password",
 		"--dbname",
 		fmt.Sprintf("postgres://%s:%s@%s:%s/%s",
@@ -27,6 +27,6 @@ func Psql(in_pipe *script.Pipe, creds vcap.Credentials) *script.Pipe {
 	if util.IsDebugLevel("DEBUG") {
 		logging.Logger.Printf("command: %s\n", combined)
 	}
-	logging.Logger.Printf("BACKUPS psql running\n")
+	logging.Logger.Printf("BACKUPS " + util.PSQL_path + " running\n")
 	return in_pipe.Exec(combined)
 }

@@ -15,7 +15,7 @@ func PG_Dump_Table(creds vcap.Credentials,
 	table string) *script.Pipe {
 	// Compose the command as a slice
 	cmd := []string{
-		"pg_dump",
+		util.PGDUMP_path,
 		"--no-password",
 		"--no-privileges",
 		"--no-owner",
@@ -33,7 +33,7 @@ func PG_Dump_Table(creds vcap.Credentials,
 	}
 	// Combine the slice for printing and execution.
 	combined := strings.Join(cmd[:], " ")
-	logging.Logger.Printf("BACKUPS pg_dump targeting %s.%s\n", schema, table)
+	logging.Logger.Printf("BACKUPS "+util.PGDUMP_path+" targeting %s.%s\n", schema, table)
 	if util.IsDebugLevel("DEBUG") {
 		fmt.Printf("command: %s\n", combined)
 	}
