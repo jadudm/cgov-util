@@ -29,7 +29,7 @@ func SetPaths(env string) {
 		PGDUMP_path = "/home/vcap/deps/0/apt/usr/lib/postgresql/15/bin/pg_dump"
 		AWS_path = "/home/vcap/app/bin/aws"
 	default:
-		logging.Logger.Println("No environment set, paths for executables were not set.")
+		logging.Logger.Println("ENV was not set, paths for executables have not been set.")
 		os.Exit(-1)
 	}
 }
