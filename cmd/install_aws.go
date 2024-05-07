@@ -15,6 +15,7 @@ import (
 )
 
 func ErrorCheck(output []byte, err error) {
+	// https://stackoverflow.com/a/7786922
 	if err != nil {
 		logging.Logger.Println(err.Error())
 		return
