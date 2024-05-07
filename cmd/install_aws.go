@@ -23,16 +23,16 @@ func ErrorCheck(output []byte, err error) {
 	logging.Logger.Println(output)
 }
 
-func CheckInstallation() {
-	checkinstallation := []string{
-		util.AWS_path,
-		"--version",
-	}
-	command := strings.Join(checkinstallation[:], " ")
-	check := exec.Command("bash", "-c", command)
-	checkOutput, checkError := check.Output()
-	ErrorCheck(checkOutput, checkError)
-}
+// func CheckInstallation() {
+// 	checkinstallation := []string{
+// 		util.AWS_path,
+// 		"--version",
+// 	}
+// 	command := strings.Join(checkinstallation[:], " ")
+// 	check := exec.Command("bash", "-c", command)
+// 	checkOutput, checkError := check.Output()
+// 	ErrorCheck(checkOutput, checkError)
+// }
 
 // installAwsCmd represents the installAws command
 var installAwsCmd = &cobra.Command{
@@ -93,6 +93,7 @@ var installAwsCmd = &cobra.Command{
 		}
 		// Regardless of the case, check to see if AWS-CLI is installed or not.
 		CheckInstallation()
+		// CheckInstallation()
 	},
 }
 
