@@ -92,7 +92,9 @@ var installAwsCmd = &cobra.Command{
 			logging.Logger.Printf("ENV set to LOCAL or TESTING, aws-cli is not necessary to install.")
 		}
 		// Regardless of the case, check to see if AWS-CLI is installed or not.
-		CheckInstallation()
+		// Something isn't working with this function. Either its running and not outputting anything,
+		// or its not running at all. TBD WIP.
+		// As of 12:56 EST 5/7/24, "./gov.gsa.fac.cgov-util install_aws" works. Just not getting the stdout confirmation
 		// CheckInstallation()
 	},
 }
