@@ -87,8 +87,12 @@ var installAwsCmd = &cobra.Command{
 			install := exec.Command("bash", "-c", installCommand)
 			installOutput, installError := install.Output()
 			ErrorCheck(installOutput, installError)
+			// Regardless of the case, check to see if AWS-CLI is installed or not.
+			CheckInstallation()
 		} else {
 			logging.Logger.Printf("ENV set to LOCAL or TESTING, aws-cli is not necessary to install.")
+			// Regardless of the case, check to see if AWS-CLI is installed or not.
+			CheckInstallation()
 		}
 	},
 }
