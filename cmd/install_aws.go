@@ -22,19 +22,18 @@ func ErrorCheck(output string, err error) {
 	} else {
 		logging.Logger.Println(output)
 	}
-	logging.Logger.Println(output)
 }
 
-// func CheckInstallation() {
-// 	checkinstallation := []string{
-// 		util.AWS_path,
-// 		"--version",
-// 	}
-// 	command := strings.Join(checkinstallation[:], " ")
-// 	check := exec.Command("bash", "-c", command)
-// 	checkOutput, checkError := check.Output()
-// 	ErrorCheck(checkOutput, checkError)
-// }
+func CheckInstallation() {
+	checkinstallation := []string{
+		util.AWS_path,
+		"--version",
+	}
+	command := strings.Join(checkinstallation[:], " ")
+	check := exec.Command("bash", "-c", command)
+	checkOutput, checkError := check.Output()
+	ErrorCheck(string(checkOutput), checkError)
+}
 
 // installAwsCmd represents the installAws command
 var installAwsCmd = &cobra.Command{
