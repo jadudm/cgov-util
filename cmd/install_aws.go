@@ -11,6 +11,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"gov.gsa.fac.cgov-util/internal/logging"
+	"gov.gsa.fac.cgov-util/internal/util"
 )
 
 func ErrorCheck(output []byte, err error) {
