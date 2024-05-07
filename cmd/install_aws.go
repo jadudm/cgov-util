@@ -19,6 +19,8 @@ func ErrorCheck(output string, err error) {
 	if err != nil {
 		logging.Logger.Println(err.Error())
 		return
+	} else {
+		logging.Logger.Println(output)
 	}
 	logging.Logger.Println(output)
 }
