@@ -58,7 +58,7 @@ var installAwsCmd = &cobra.Command{
 			logging.Logger.Printf("Running command: " + curlCommand)
 			curl := exec.Command("bash", "-c", curlCommand)
 			curlOutput, curlError := curl.Output()
-			ErrorCheck(curlOutput, curlError)
+			ErrorCheck(string(curlOutput), curlError)
 
 			// unzip awscliv2.zip && rm awscliv2.zip
 			unzipaws := []string{
@@ -73,7 +73,7 @@ var installAwsCmd = &cobra.Command{
 			logging.Logger.Printf("Running command: " + unzipCommand)
 			extract := exec.Command("bash", "-c", unzipCommand)
 			unzipOutput, unzipError := extract.Output()
-			ErrorCheck(unzipOutput, unzipError)
+			ErrorCheck(string(unzipOutput), unzipError)
 
 			// ./aws/install -i ~/usr -b ~/bin
 			installaws := []string{
@@ -88,7 +88,8 @@ var installAwsCmd = &cobra.Command{
 			logging.Logger.Printf("Running command: " + installCommand)
 			install := exec.Command("bash", "-c", installCommand)
 			installOutput, installError := install.Output()
-			ErrorCheck(installOutput, installError)
+			ErrorCheck(string(installOutput), installError)
+
 			// Regardless of the case, check to see if AWS-CLI is installed or not.
 			CheckInstallation()
 		} else {
