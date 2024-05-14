@@ -14,16 +14,6 @@ import (
 	"gov.gsa.fac.cgov-util/internal/util"
 )
 
-func ErrorCheck(output string, err error) {
-	// https://stackoverflow.com/a/7786922
-	if err != nil {
-		logging.Logger.Println(err.Error())
-		return
-	} else {
-		logging.Logger.Println(output)
-	}
-}
-
 func CheckInstallation() {
 	checkinstallation := []string{
 		util.AWS_path,
@@ -32,7 +22,7 @@ func CheckInstallation() {
 	command := strings.Join(checkinstallation[:], " ")
 	check := exec.Command("bash", "-c", command)
 	checkOutput, checkError := check.Output()
-	ErrorCheck(string(checkOutput), checkError)
+	util.ErrorCheck(string(checkOutput), checkError)
 }
 
 // installAwsCmd represents the installAws command
@@ -58,7 +48,7 @@ var installAwsCmd = &cobra.Command{
 			logging.Logger.Printf("Running command: " + curlCommand)
 			curl := exec.Command("bash", "-c", curlCommand)
 			curlOutput, curlError := curl.Output()
-			ErrorCheck(string(curlOutput), curlError)
+			util.ErrorCheck(string(curlOutput), curlError)
 
 			// unzip awscliv2.zip && rm awscliv2.zip
 			unzipaws := []string{
@@ -73,7 +63,7 @@ var installAwsCmd = &cobra.Command{
 			logging.Logger.Printf("Running command: " + unzipCommand)
 			extract := exec.Command("bash", "-c", unzipCommand)
 			unzipOutput, unzipError := extract.Output()
-			ErrorCheck(string(unzipOutput), unzipError)
+			util.ErrorCheck(string(unzipOutput), unzipError)
 
 			// ./aws/install -i ~/usr -b ~/bin
 			installaws := []string{
@@ -88,7 +78,7 @@ var installAwsCmd = &cobra.Command{
 			logging.Logger.Printf("Running command: " + installCommand)
 			install := exec.Command("bash", "-c", installCommand)
 			installOutput, installError := install.Output()
-			ErrorCheck(string(installOutput), installError)
+			util.ErrorCheck(string(installOutput), installError)
 
 			// Regardless of the case, check to see if AWS-CLI is installed or not.
 			CheckInstallation()
