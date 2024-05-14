@@ -13,11 +13,11 @@ import (
 func parseS3Path(path string) *structs.S3Path {
 	u, err := url.Parse(path)
 	if err != nil {
-		logging.Logger.Printf("S3toDB could not parse s3 path: %s", path)
+		logging.Logger.Printf("parseS3Path could not parse s3 path: %s", path)
 		os.Exit(logging.S3_PATH_PARSE_ERROR)
 	}
 	if u.Scheme != "s3" {
-		logging.Logger.Printf("S3toDB does not look like an S3 path (e.g. `s3://`): %s", path)
+		logging.Logger.Printf("parseS3Path does not look like an S3 path (e.g. `s3://`): %s", path)
 		os.Exit(logging.S3_PATH_PARSE_ERROR)
 	}
 
@@ -65,7 +65,7 @@ func getBucketCredentials(s3path *structs.S3Path) vcap.Credentials {
 	case "TESTING":
 		bucket_creds, err := vcap.VCS.GetCredentials("user-provided", s3path.Bucket)
 		if err != nil {
-			logging.Logger.Printf("DBTOS3 could not get minio credentials")
+			logging.Logger.Printf("GetCredentials could not get minio credentials: %s", s3path)
 			os.Exit(logging.COULD_NOT_FIND_CREDENTIALS)
 		}
 		return bucket_creds
