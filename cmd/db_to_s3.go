@@ -16,6 +16,7 @@ import (
 	"gov.gsa.fac.cgov-util/internal/logging"
 	"gov.gsa.fac.cgov-util/internal/pipes"
 	"gov.gsa.fac.cgov-util/internal/structs"
+	"gov.gsa.fac.cgov-util/internal/util"
 
 	"gov.gsa.fac.cgov-util/internal/vcap"
 )
@@ -124,6 +125,7 @@ Takes 0 or more table names as arguments. If no arguments are
 provided, all tables are backed up.
 	`,
 	Run: func(cmd *cobra.Command, table_names []string) {
+		util.UnsetProxy()
 		s3path := parseS3Path(db_to_s3_s3path)
 		db_creds := getDBCredentials(db_to_s3_db)
 		bucket_creds := getBucketCredentials(s3path)
