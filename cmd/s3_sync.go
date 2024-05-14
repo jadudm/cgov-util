@@ -24,7 +24,7 @@ var s3SyncCmd = &cobra.Command{
 	Long:  `Uses aws s3 sync to sync two buckets contents.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("s3_sync called")
-		util.Unset_Proxy()
+		util.UnsetProxy()
 		source_s3 := parseS3Path(source_s3)
 		dest_s3 := parseS3Path(dest_s3)
 		source_creds := getBucketCredentials(source_s3)
