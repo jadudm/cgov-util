@@ -52,7 +52,7 @@ func getDBCredentials(db_name string) vcap.Credentials {
 	// Check that we can get credentials.
 	db_creds, err := vcap.VCS.GetCredentials("aws-rds", db_name)
 	if err != nil {
-		logging.Logger.Printf("S3toDB could not get DB credentials for %s", db_name)
+		logging.Logger.Printf("GETDBCREDENTIALS could not get DB credentials for %s", db_name)
 		os.Exit(logging.COULD_NOT_FIND_CREDENTIALS)
 	}
 	return db_creds
