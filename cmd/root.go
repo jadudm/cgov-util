@@ -36,12 +36,12 @@ func parseFlags(cmd_name string, cmd *cobra.Command) {
 	case "s3_to_db":
 		fmt.Println("RUNNING S3_TO_DB FLAGS")
 		cmd.Flags().StringVarP(&s3_to_db_s3path, "s3path", "", "", "destination path")
-		cmd.Flags().StringVarP(&s3_to_db_db, "db", "", "", "source database label")
+		cmd.Flags().StringVarP(&s3_to_db_db, "db", "", "", "source database name")
 		cmd.MarkFlagRequired("db")
 		cmd.MarkFlagRequired("s3path")
 	case "db_to_s3":
 		fmt.Println("RUNNING DB_TO_S3 FLAGS")
-		cmd.Flags().StringVarP(&db_to_s3_db, "db", "", "", "source database label")
+		cmd.Flags().StringVarP(&db_to_s3_db, "db", "", "", "source database name")
 		cmd.Flags().StringVarP(&db_to_s3_s3path, "s3path", "", "", "destination path")
 		cmd.MarkFlagRequired("db")
 		cmd.MarkFlagRequired("s3path")
@@ -53,7 +53,7 @@ func parseFlags(cmd_name string, cmd *cobra.Command) {
 		cmd.MarkFlagRequired("dest_db")
 	case "truncate":
 		fmt.Println("RUNNING TRUNCATE FLAGS")
-		cmd.Flags().StringVarP(&truncate_db, "db", "", "", "target database label")
+		cmd.Flags().StringVarP(&truncate_db, "db", "", "", "target database name")
 		cmd.Flags().StringSliceVarP(&truncate_truncate, "truncate", "", []string{}, "tables to truncate before load")
 	default:
 		fmt.Printf("NO FLAGS PROCESSED")
