@@ -64,14 +64,22 @@ Windows: Open powershell as administrator to download the tool. Move `C:\mc.exe`
 ## Common Command Usage
 - Install AWS CLI on Cloud.gov instances:
     - It is advised to not run this on a local machine, due to where aws will be installed and could potentially add conflitcs. Please install AWS CLI on your local environment using the official methods provided by AWS for your OS.
-`./gov.gsa.fac.cgov-util install_aws`
+```
+./gov.gsa.fac.cgov-util install_aws
+```
 
 - Use AWS S3 Sync to sync the contents of two s3 buckets:
-`./gov.gsa.fac.cgov-util s3_sync --source_s3 s3://<src-s3-name>/ --dest_s3 s3://<dest-s3-name>/`
+```
+./gov.gsa.fac.cgov-util s3_sync --source_s3 s3://<src-s3-name>/ --dest_s3 s3://<dest-s3-name>/
+```
 
 - Backup an Postgres instance to an s3 using psql .bin files:
-`./gov.gsa.fac.cgov-util s3_to_db --db <src-db-name> --s3path s3://<dest-s3-name>/path/to/store/`
+```
+./gov.gsa.fac.cgov-util s3_to_db --db <src-db-name> --s3path s3://<dest-s3-name>/path/to/store/
+```
 
 - Backup Postgres Tables to another Postres DB
     - This requires a secondary postgres in your docker compose, with the expected `5431:5432` ports, while the primary runs on `5432:5432`. These can be changed if desired.
-`./gov.gsa.fac.cgov-util db_to_db --src_db <src-db-name> --dest_db <dest-db-name>`
+```
+./gov.gsa.fac.cgov-util db_to_db --src_db <src-db-name> --dest_db <dest-db-name>
+```
