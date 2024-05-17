@@ -45,25 +45,44 @@ When running locally, this assumes `minio` is running as a stand-in for S3, and 
 (An example `config.json` is in this repository, and a more complete file in `internal/vcap/vcap_test.go`).
 
 
-## assumptions
+## Assumptions
 
 * The `ENV` var is set to `LOCAL` for local testing. i.e `export ENV="LOCAL"`
-* You have two Postgres containers running, one at port 5432, and another at 6543.
+* You have two Postgres containers running, one at port 5432, and another at 5431.
 
 You can change the local DB values in `config.yaml` to reflect your config.
 
 In a remote environment, the variable `VCAP_SERVICES` is referenced to extract values.
 
 ## Minio on Windows
-Windows: Open powershell as administrator to download the tool. Move `C:\mc.exe` to the root of the project folder.
-`Invoke-WebRequest -Uri "https://dl.minio.io/client/mc/release/windows-amd64/mc.exe" -OutFile "C:\mc.exe"`
+- Open powershell as administrator to download the tool.
+- Move `C:\mc.exe` to the root of the project folder.
+```
+Invoke-WebRequest -Uri "https://dl.minio.io/client/mc/release/windows-amd64/mc.exe" -OutFile "C:\mc.exe"
+```
 
-## adding a new command
-`cobra-cli add <command_name>`
+## Adding a New Command
+- We utilize cobra-cli as a basis for creating commands in [cmd](./cmd/). It will generate a template file for use, prepoulated with necessary information to start building a command.
+- More information can be found at the [cobra-cli readme](https://github.com/spf13/cobra-cli/blob/main/README.md)
+```
+cobra-cli add <command_name>
+```
 
 ## Common Command Usage
-- Install AWS CLI on Cloud.gov instances:
-    - It is advised to not run this on a local machine, due to where aws will be installed and could potentially add conflitcs. Please install AWS CLI on your local environment using the official methods provided by AWS for your OS.
+
+- Fetch the latest release when running on a cloud.gov environment:
+```
+# With Proxy:
+curl -x $https_proxy -L "https://github.com/GSA-TTS/fac-backup-utility/releases/download/vX.Y.ZZ/gov.gsa.fac.cgov-util-vX.Y.ZZ-linux-amd64.tar.gz" -O
+
+# Without Proxy
+curl -L "https://github.com/GSA-TTS/fac-backup-utility/releases/download/vX.Y.ZZ/gov.gsa.fac.cgov-util-vX.Y.ZZ-linux-amd64.tar.gz" -O
+
+tar -xvf gov.gsa.fac.cgov-util-vX.Y.ZZ-linux-amd64.tar.gz && rm gov.gsa.fac.cgov-util-vX.Y.ZZ-linux-amd64.tar.gz
+```
+
+- Install AWS CLI on cloud.gov instances:
+    - It is advised to not run this on a local machine, due to where aws will be installed and could potentially add conflicts. Please install AWS CLI on your local environment using the official methods provided by AWS for your OS.
 ```
 ./gov.gsa.fac.cgov-util install_aws
 ```
@@ -78,8 +97,9 @@ Windows: Open powershell as administrator to download the tool. Move `C:\mc.exe`
 ./gov.gsa.fac.cgov-util s3_to_db --db <src-db-name> --s3path s3://<dest-s3-name>/path/to/store/
 ```
 
-- Backup Postgres Tables to another Postres DB
-    - This requires a secondary postgres in your docker compose, with the expected `5431:5432` ports, while the primary runs on `5432:5432`. These can be changed if desired.
+- Backup Postgres Tables to another Postgres instance:
+    - This requires a secondary postgres in your docker compose, with the expected `5431:5432` ports, while the primary runs on `5432:5432`. These can be changed if desired. Port changes (if applicable) are only required for local testing & development.
+    - When running on cloud.gov environements, the port and URI are contained in `$VCAP_SERVICES` for the `src_db` and `dest_db` and thus require no changes.
 ```
 ./gov.gsa.fac.cgov-util db_to_db --src_db <src-db-name> --dest_db <dest-db-name>
 ```
