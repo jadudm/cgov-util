@@ -54,11 +54,21 @@ You can change the local DB values in `config.yaml` to reflect your config.
 
 In a remote environment, the variable `VCAP_SERVICES` is referenced to extract values.
 
-## Minio
+## Minio on Windows
 Windows: Open powershell as administrator to download the tool. Move `C:\mc.exe` to the root of the project folder.
 `Invoke-WebRequest -Uri "https://dl.minio.io/client/mc/release/windows-amd64/mc.exe" -OutFile "C:\mc.exe"`
 
-Linux:
-
 ## adding a new command
+`cobra-cli add <command_name>`
 
+## Common Command Usage
+- Install AWS CLI on Cloud.gov instances:
+    - It is advised to not run this on a local machine, due to where aws will be installed and could potentially add conflitcs. Please install AWS CLI on your local environment using the official methods provided by AWS for your OS.
+`./gov.gsa.fac.cgov-util install_aws`
+
+- Backup an Postgres instance to an s3 using psql .bin files:
+`./gov.gsa.fac.cgov-util s3_to_db --db <src-db-name> --s3path s3://path/to/store/`
+
+- Backup Postgres Tables to another Postres DB
+    - This requires a secondary postgres in your docker compose, with the expected `5431:5432` ports, while the primary runs on `5432:5432`. These can be changed if desired.
+`./gov.gsa.fac.cgov-util db_to_db --src_db <src-db-name> --dest_db <dest-db-name>`
