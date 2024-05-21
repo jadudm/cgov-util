@@ -11,7 +11,7 @@
             "credentials": {
                 "access_key_id": "longtest",
                 "secret_access_key": "longtest",
-                "bucket": "gsa-fac-private-s3",
+                "bucket": "backups",
                 "endpoint": "http://127.0.0.1:9001",
                 "admin_username": "minioadmin",
                 "admin_password": "minioadmin"
