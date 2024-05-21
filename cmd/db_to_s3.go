@@ -64,7 +64,7 @@ func tables_to_local_bucket(
 	table_names []string) {
 	var BACKUP_ALL = len(table_names) == 0
 
-	logging.Logger.Printf("DBTOS3 backing up from %s to %s/%s\n",
+	logging.Logger.Printf("DBTOS3 backing up from %s to %s%s\n",
 		source_creds.Get("name").String(),
 		s3path.Bucket,
 		s3path.Key,
