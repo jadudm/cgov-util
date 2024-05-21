@@ -21,45 +21,50 @@ func bucket_to_local_tables(
 	s3path *structs.S3Path,
 ) {
 
-	mc_pipe := pipes.McRead(
-		bucket_creds,
-		fmt.Sprintf("%s%s", s3path.Bucket, s3path.Key),
-	).FilterLine(func(s string) string {
-		if strings.Contains(s, "CREATE") {
-			fmt.Printf("REPLACING IN %s\n", s)
+	table_to_schema := get_table_and_schema_names(db_creds)
+	//fmt.Sprintf("%s%s/%s-%s.dump", s3path.Bucket, s3path.Key, schema, table)
+	for table, schema := range table_to_schema {
+		truncate_tables(db_creds, []string{table})
+		mc_pipe := pipes.McRead(
+			bucket_creds,
+			fmt.Sprintf("%s%s/%s-%s.dump", s3path.Bucket, s3path.Key, schema, table),
+		).FilterLine(func(s string) string {
+			if strings.Contains(s, "CREATE") {
+				fmt.Printf("REPLACING IN %s\n", s)
+			}
+			if strings.Contains(s, "CREATE TABLE") {
+				return strings.Replace(s, "CREATE TABLE", "CREATE TABLE IF NOT EXISTS", -1)
+			} else if strings.Contains(s, "CREATE INDEX") {
+				return strings.Replace(s, "CREATE INDEX", "CREATE INDEX IF NOT EXISTS", -1)
+			} else {
+				return s
+			}
+		})
+		psql_pipe := pipes.Psql(mc_pipe, db_creds)
+
+		exit_code := 0
+		stdout, _ := mc_pipe.String()
+		if strings.Contains(stdout, "ERR") {
+			logging.Logger.Printf("S3TODB `mc` reported an error\n")
+			logging.Logger.Println(stdout)
+			exit_code = logging.PIPE_FAILURE
 		}
-		if strings.Contains(s, "CREATE TABLE") {
-			return strings.Replace(s, "CREATE TABLE", "CREATE TABLE IF NOT EXISTS", -1)
-		} else if strings.Contains(s, "CREATE INDEX") {
-			return strings.Replace(s, "CREATE INDEX", "CREATE INDEX IF NOT EXISTS", -1)
-		} else {
-			return s
+
+		if mc_pipe.Error() != nil {
+			logging.Logger.Println("S3TODB `dump | mc` pipe failed")
+			exit_code = logging.PIPE_FAILURE
 		}
-	})
-	psql_pipe := pipes.Psql(mc_pipe, db_creds)
 
-	exit_code := 0
-	stdout, _ := mc_pipe.String()
-	if strings.Contains(stdout, "ERR") {
-		logging.Logger.Printf("S3TODB `mc` reported an error\n")
-		logging.Logger.Println(stdout)
-		exit_code = logging.PIPE_FAILURE
-	}
+		stdout, _ = psql_pipe.String()
+		if strings.Contains(stdout, "ERR") {
+			logging.Logger.Printf("S3TODB database reported an error\n")
+			logging.Logger.Println(stdout)
+			exit_code = logging.PIPE_FAILURE
+		}
 
-	if mc_pipe.Error() != nil {
-		logging.Logger.Println("S3TODB `dump | mc` pipe failed")
-		exit_code = logging.PIPE_FAILURE
-	}
-
-	stdout, _ = psql_pipe.String()
-	if strings.Contains(stdout, "ERR") {
-		logging.Logger.Printf("S3TODB database reported an error\n")
-		logging.Logger.Println(stdout)
-		exit_code = logging.PIPE_FAILURE
-	}
-
-	if exit_code != 0 {
-		os.Exit(exit_code)
+		if exit_code != 0 {
+			os.Exit(exit_code)
+		}
 	}
 
 }
