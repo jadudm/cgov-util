@@ -3,7 +3,7 @@ package cmd
 import (
 	"net/url"
 	"os"
-	"path/filepath"
+	"path"
 
 	"gov.gsa.fac.cgov-util/internal/logging"
 	"gov.gsa.fac.cgov-util/internal/structs"
@@ -24,10 +24,11 @@ func parseS3Path(s3_path string) *structs.S3Path {
 	logging.Logger.Println("Path: ", u.Path)
 
 	return &structs.S3Path{
-		Bucket: filepath.Clean(u.Host),
-		Key:    filepath.Clean(u.Path),
+		//Bucket: filepath.Clean(u.Host),
+		//Key:    filepath.Clean(u.Path),
+		Bucket: path.Clean(u.Host),
+		Key:    path.Clean(u.Path),
 	}
-
 }
 
 func runLocalOrRemote(funs structs.Choice) {
