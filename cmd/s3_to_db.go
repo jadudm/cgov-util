@@ -12,6 +12,7 @@ import (
 	"gov.gsa.fac.cgov-util/internal/logging"
 	"gov.gsa.fac.cgov-util/internal/pipes"
 	"gov.gsa.fac.cgov-util/internal/structs"
+	"gov.gsa.fac.cgov-util/internal/util"
 	"gov.gsa.fac.cgov-util/internal/vcap"
 )
 
@@ -24,43 +25,70 @@ func bucket_to_local_tables(
 	table_to_schema := get_table_and_schema_names(db_creds)
 	//fmt.Sprintf("%s%s/%s-%s.dump", s3path.Bucket, s3path.Key, schema, table)
 	for table, schema := range table_to_schema {
-		truncate_tables(db_creds, []string{table})
-		mc_pipe := pipes.McRead(
-			bucket_creds,
-			fmt.Sprintf("%s%s/%s-%s.dump", s3path.Bucket, s3path.Key, schema, table),
-		).FilterLine(func(s string) string {
-			if strings.Contains(s, "CREATE") {
-				fmt.Printf("REPLACING IN %s\n", s)
-			}
-			if strings.Contains(s, "CREATE TABLE") {
-				return strings.Replace(s, "CREATE TABLE", "CREATE TABLE IF NOT EXISTS", -1)
-			} else if strings.Contains(s, "CREATE INDEX") {
-				return strings.Replace(s, "CREATE INDEX", "CREATE INDEX IF NOT EXISTS", -1)
-			} else {
-				return s
-			}
-		})
-		psql_pipe := pipes.Psql(mc_pipe, db_creds)
+		// mc_pipe := pipes.McRead(
+		// 	bucket_creds,
+		// 	fmt.Sprintf("%s%s/%s-%s.dump", s3path.Bucket, s3path.Key, schema, table))
+		// mc_pipe := pipes.McRead(
+		// 	bucket_creds,
+		// 	fmt.Sprintf("%s%s/%s-%s.dump", s3path.Bucket, s3path.Key, schema, table),
+		// ).FilterLine(func(s string) string {
+		// 	if strings.Contains(s, "CREATE") {
+		// 		fmt.Printf("REPLACING IN %s\n", s)
+		// 	}
+		// 	if strings.Contains(s, "CREATE TABLE") {
+		// 		return strings.Replace(s, "CREATE TABLE", "CREATE TABLE IF NOT EXISTS", -1)
+		// 	} else if strings.Contains(s, "CREATE INDEX") {
+		// 		return strings.Replace(s, "CREATE INDEX", "CREATE INDEX IF NOT EXISTS", -1)
+		// 	} else {
+		// 		return s
+		// 	}
+		// })
+		// psql_pipe := pipes.Psql(mc_pipe, db_creds)
+		// pg_restore_schema_pipe := pipes.PG_Restore_Schema(mc_pipe, db_creds, schema, table)
 
+		mc_copy := pipes.McCopy(bucket_creds, fmt.Sprintf("%s%s/%s-%s.dump", s3path.Bucket, s3path.Key, schema, table))
 		exit_code := 0
-		stdout, _ := mc_pipe.String()
+		stdout, _ := mc_copy.String()
 		if strings.Contains(stdout, "ERR") {
-			logging.Logger.Printf("S3TODB `mc` reported an error\n")
+			logging.Logger.Printf("PGCOPY reported an error\n")
 			logging.Logger.Println(stdout)
 			exit_code = logging.PIPE_FAILURE
 		}
 
-		if mc_pipe.Error() != nil {
-			logging.Logger.Println("S3TODB `dump | mc` pipe failed")
-			exit_code = logging.PIPE_FAILURE
-		}
+		truncate_tables(db_creds, []string{table})
 
-		stdout, _ = psql_pipe.String()
-		if strings.Contains(stdout, "ERR") {
-			logging.Logger.Printf("S3TODB database reported an error\n")
-			logging.Logger.Println(stdout)
-			exit_code = logging.PIPE_FAILURE
-		}
+		pg_restore := pipes.PG_Restore(db_creds, schema, table)
+		restoreOut, restoreError := pg_restore.String()
+		util.ErrorCheck(restoreOut, restoreError)
+
+		// if strings.Contains(stdout, "ERR") {
+		// 	logging.Logger.Printf("S3TODB `mc` reported an error\n")
+		// 	logging.Logger.Println(stdout)
+		// 	exit_code = logging.PIPE_FAILURE
+		// }
+		// util.ErrorCheck(stdout, stderr)
+
+		// if mc_pipe.Error() != nil {
+		// 	logging.Logger.Println("S3TODB `dump | mc` pipe failed")
+		// 	exit_code = logging.PIPE_FAILURE
+		// }
+
+		//stdout, _ = psql_pipe.String()
+		// stdout, _ = pg_restore_schema_pipe.String()
+		// if strings.Contains(stdout, "ERR") {
+		// 	logging.Logger.Printf("PGRESTORESCHEMA reported an error\n")
+		// 	logging.Logger.Println(stdout)
+		// 	exit_code = logging.PIPE_FAILURE
+		// }
+
+		//pg_restore_data_pipe := pipes.PG_Restore_Data(mc_pipe, db_creds, schema, table)
+
+		// stdout, _ = pg_restore_data_pipe.String()
+		// if strings.Contains(stdout, "ERR") {
+		// 	logging.Logger.Printf("PGRESTOREDATA reported an error\n")
+		// 	logging.Logger.Println(stdout)
+		// 	exit_code = logging.PIPE_FAILURE
+		// }
 
 		if exit_code != 0 {
 			os.Exit(exit_code)
@@ -100,7 +128,7 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-
+		util.UnsetProxy()
 		path_struct := parseS3Path(s3_to_db_s3path)
 		// Check that we can get credentials.
 		db_creds, err := vcap.VCS.GetCredentials("aws-rds", s3_to_db_db)
@@ -140,7 +168,7 @@ var (
 )
 
 func init() {
+	util.PG_dump_prep()
 	rootCmd.AddCommand(S3toDBCmd)
 	parseFlags("s3_to_db", S3toDBCmd)
-
 }
