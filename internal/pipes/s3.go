@@ -93,5 +93,29 @@ func S3Sync(source_creds vcap.Credentials,
 	sync := exec.Command("bash", "-c", combined)
 	syncOutput, syncError := sync.Output()
 	util.ErrorCheck(string(syncOutput), syncError)
+}
 
+func S3Copy(source_creds vcap.Credentials,
+	path string) *script.Pipe {
+
+	os.Setenv("AWS_SECRET_ACCESS_KEY", source_creds.Get("secret_access_key").String())
+	os.Setenv("AWS_ACCESS_KEY_ID", source_creds.Get("access_key_id").String())
+	os.Setenv("AWS_DEFAULT_REGION", source_creds.Get("region").String())
+	cmd := []string{
+		util.AWS_path,
+		"s3",
+		"cp",
+		fmt.Sprintf("s3://%s/%s",
+			source_creds.Get("bucket").String(),
+			path,
+		),
+		"./pg_dump_tables/",
+	}
+	combined := strings.Join(cmd[:], " ")
+	logging.Logger.Printf("S3 Copying " + source_creds.Get("bucket").String() + " to local disk.")
+	logging.Logger.Printf("Running command: " + combined)
+	sync := exec.Command("bash", "-c", combined)
+	syncOutput, syncError := sync.Output()
+	util.ErrorCheck(string(syncOutput), syncError)
+	return script.Exec(combined)
 }
