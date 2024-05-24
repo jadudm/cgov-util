@@ -61,6 +61,12 @@ func bucket_to_local_tables(
 		restoreOut, restoreError := pg_restore.String()
 		util.ErrorCheck(restoreOut, restoreError)
 
+		os.Remove(fmt.Sprintf("./pg_dump_tables/%s", dump_file_name))
+		logging.Logger.Printf("REMOVING FILE: %s", dump_file_name)
+		// func PG_dump_cleanup() {
+		// 	script.Exec("rm -r ./pg_dump_tables")
+		// }
+
 		// if strings.Contains(stdout, "ERR") {
 		// 	logging.Logger.Printf("S3TODB `mc` reported an error\n")
 		// 	logging.Logger.Println(stdout)
