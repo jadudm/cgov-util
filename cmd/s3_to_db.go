@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/bitfield/script"
 	"github.com/spf13/cobra"
 	"gov.gsa.fac.cgov-util/internal/logging"
 	"gov.gsa.fac.cgov-util/internal/pipes"
@@ -177,6 +178,8 @@ var S3toDBCmd = &cobra.Command{
 				os.Exit(logging.COULD_NOT_FIND_CREDENTIALS)
 			}
 			bucket_to_local_tables(db_creds, bucket_creds, path_struct)
+			os.Remove("pg_dump_tables")
+			logging.Logger.Println("Finished Restore and cleaning residual files/folders.")
 		case "DEV":
 			fallthrough
 		case "STAGING":
@@ -188,6 +191,8 @@ var S3toDBCmd = &cobra.Command{
 				os.Exit(logging.COULD_NOT_FIND_CREDENTIALS)
 			}
 			bucket_to_cgov_tables(bucket_creds, db_creds, path_struct)
+			os.Remove("pg_dump_tables")
+			logging.Logger.Println("Finished Restore and cleaning residual files/folders.")
 		}
 	},
 }
