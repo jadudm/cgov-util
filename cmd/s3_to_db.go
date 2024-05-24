@@ -168,7 +168,11 @@ var (
 )
 
 func init() {
-	util.PG_dump_prep()
+	PG_dump_prep()
 	rootCmd.AddCommand(S3toDBCmd)
 	parseFlags("s3_to_db", S3toDBCmd)
+}
+
+func PG_dump_prep() {
+	script.Exec("mkdir -p pg_dump_tables")
 }
