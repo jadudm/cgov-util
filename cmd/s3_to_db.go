@@ -152,13 +152,11 @@ func bucket_to_cgov_tables(
 var S3toDBCmd = &cobra.Command{
 	Use:   "s3_to_db",
 	Args:  cobra.ArbitraryArgs,
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Restore pg_dump file to database.",
+	Long: `This command takes database and s3 path input, determining
+	if this is being run locally with minio or on cloud.gov, copies the .dump
+	files from the dedicated s3 storage to disk, truncates the target table,
+	and then performs a pg_restore on the designated table.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		util.UnsetProxy()
 		path_struct := parseS3Path(s3_to_db_s3path)
