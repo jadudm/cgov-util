@@ -21,10 +21,10 @@ func bucket_to_local_tables(
 	bucket_creds vcap.Credentials,
 	s3path *structs.S3Path,
 ) {
-
 	table_to_schema := get_table_and_schema_names(db_creds)
 	//fmt.Sprintf("%s%s/%s-%s.dump", s3path.Bucket, s3path.Key, schema, table)
 	for table, schema := range table_to_schema {
+		dump_file_name := fmt.Sprintf("%s-%s.dump", schema, table)
 		// mc_pipe := pipes.McRead(
 		// 	bucket_creds,
 		// 	fmt.Sprintf("%s%s/%s-%s.dump", s3path.Bucket, s3path.Key, schema, table))
