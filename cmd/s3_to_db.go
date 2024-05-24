@@ -106,7 +106,7 @@ func bucket_to_local_tables(
 // FIXME: need s3read...
 func bucket_to_cgov_tables(
 	s3_creds vcap.Credentials,
-	dest_db_creds vcap.Credentials,
+	db_creds vcap.Credentials,
 	s3path *structs.S3Path,
 ) {
 	s3_pipe := pipes.S3Read(
