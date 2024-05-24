@@ -46,8 +46,8 @@ func bucket_to_local_tables(
 		// psql_pipe := pipes.Psql(mc_pipe, db_creds)
 		// pg_restore_schema_pipe := pipes.PG_Restore_Schema(mc_pipe, db_creds, schema, table)
 
-		mc_copy := pipes.McCopy(bucket_creds, fmt.Sprintf("%s%s/%s-%s.dump", s3path.Bucket, s3path.Key, schema, table))
 		exit_code := 0
+		mc_copy := pipes.McCopy(bucket_creds, fmt.Sprintf("%s%s/%s", s3path.Bucket, s3path.Key, dump_file_name))
 		stdout, _ := mc_copy.String()
 		if strings.Contains(stdout, "ERR") {
 			logging.Logger.Printf("PGCOPY reported an error\n")
