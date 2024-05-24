@@ -109,17 +109,43 @@ func bucket_to_cgov_tables(
 	db_creds vcap.Credentials,
 	s3path *structs.S3Path,
 ) {
-	s3_pipe := pipes.S3Read(
-		s3_creds,
-		fmt.Sprintf("%s%s", s3path.Bucket, s3path.Key),
-	)
-	psql_pipe := pipes.Psql(s3_pipe, dest_db_creds)
+	table_to_schema := get_table_and_schema_names(db_creds)
+	//fmt.Sprintf("%s%s/%s-%s.dump", s3path.Bucket, s3path.Key, schema, table)
+	for table, schema := range table_to_schema {
+		dump_file_name := fmt.Sprintf("%s-%s.dump", schema, table)
 
-	psql_pipe.Wait()
-	if err := psql_pipe.Error(); err != nil {
-		logging.Logger.Println("DUMPDBTOS3 `dump | mc` pipe failed")
-		os.Exit(logging.PIPE_FAILURE)
+		exit_code := 0
+		s3_copy := pipes.S3Copy(s3_creds, fmt.Sprintf("%s%s/%s", s3path.Bucket, s3path.Key, dump_file_name))
+		stdout, _ := s3_copy.String()
+		if strings.Contains(stdout, "ERR") {
+			logging.Logger.Printf("S3COPY reported an error\n")
+			logging.Logger.Println(stdout)
+			exit_code = logging.PIPE_FAILURE
+		}
+
+		truncate_tables(db_creds, []string{table})
+
+		pg_restore := pipes.PG_Restore(db_creds, schema, table)
+		restoreOut, restoreError := pg_restore.String()
+		util.ErrorCheck(restoreOut, restoreError)
+
+		os.Remove(fmt.Sprintf("./pg_dump_tables/%s", dump_file_name))
+		logging.Logger.Printf("REMOVING FILE: %s", dump_file_name)
+		if exit_code != 0 {
+			os.Exit(exit_code)
+		}
 	}
+	// s3_pipe := pipes.S3Read(
+	// 	s3_creds,
+	// 	fmt.Sprintf("%s%s", s3path.Bucket, s3path.Key),
+	// )
+	// psql_pipe := pipes.Psql(s3_pipe, dest_db_creds)
+
+	// psql_pipe.Wait()
+	// if err := psql_pipe.Error(); err != nil {
+	// 	logging.Logger.Println("DUMPDBTOS3 `dump | mc` pipe failed")
+	// 	os.Exit(logging.PIPE_FAILURE)
+	// }
 }
 
 // S3toDBCmd represents the S3toDB command
