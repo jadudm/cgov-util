@@ -33,7 +33,7 @@ func PG_Restore(creds vcap.Credentials, schema string, table string) *script.Pip
 	// Combine the slice for printing and execution.
 	combined := strings.Join(cmd[:], " ")
 	logging.Logger.Printf("RESTORE "+util.PGRESTORE_path+" targeting %s.%s\n", schema, table)
-	logging.Logger.Printf("CALLING COMMAND: " + combined)
+	//logging.Logger.Printf("CALLING COMMAND: " + combined)
 	if util.IsDebugLevel("DEBUG") {
 		fmt.Printf("command: %s\n", combined)
 	}

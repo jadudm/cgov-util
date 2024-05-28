@@ -129,6 +129,7 @@ func bucket_to_cgov_tables(
 		pg_restore := pipes.PG_Restore(db_creds, schema, table)
 		restoreOut, restoreError := pg_restore.String()
 		util.ErrorCheck(restoreOut, restoreError)
+		logging.Logger.Printf("RESTORE of table %s complete.", table)
 
 		os.Remove(fmt.Sprintf("./pg_dump_tables/%s", dump_file_name))
 		logging.Logger.Printf("REMOVING FILE: %s", dump_file_name)
