@@ -184,6 +184,8 @@ var S3toDBCmd = &cobra.Command{
 			fallthrough
 		case "STAGING":
 			fallthrough
+		case "PREVIEW":
+			fallthrough
 		case "PRODUCTION":
 			bucket_creds, err := vcap.VCS.GetCredentials("s3", path_struct.Bucket)
 			if err != nil {
