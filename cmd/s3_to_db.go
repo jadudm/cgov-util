@@ -185,7 +185,7 @@ var S3toDBCmd = &cobra.Command{
 		case "STAGING":
 			fallthrough
 		case "PRODUCTION":
-			bucket_creds, err := vcap.VCS.GetCredentials("aws-rds", path_struct.Bucket)
+			bucket_creds, err := vcap.VCS.GetCredentials("s3", path_struct.Bucket)
 			if err != nil {
 				logging.Logger.Printf("S3toDB could not get s3 credentials")
 				os.Exit(logging.COULD_NOT_FIND_CREDENTIALS)
