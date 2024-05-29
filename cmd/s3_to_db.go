@@ -26,26 +26,6 @@ func bucket_to_local_tables(
 	//fmt.Sprintf("%s%s/%s-%s.dump", s3path.Bucket, s3path.Key, schema, table)
 	for table, schema := range table_to_schema {
 		dump_file_name := fmt.Sprintf("%s-%s.dump", schema, table)
-		// mc_pipe := pipes.McRead(
-		// 	bucket_creds,
-		// 	fmt.Sprintf("%s%s/%s-%s.dump", s3path.Bucket, s3path.Key, schema, table))
-		// mc_pipe := pipes.McRead(
-		// 	bucket_creds,
-		// 	fmt.Sprintf("%s%s/%s-%s.dump", s3path.Bucket, s3path.Key, schema, table),
-		// ).FilterLine(func(s string) string {
-		// 	if strings.Contains(s, "CREATE") {
-		// 		fmt.Printf("REPLACING IN %s\n", s)
-		// 	}
-		// 	if strings.Contains(s, "CREATE TABLE") {
-		// 		return strings.Replace(s, "CREATE TABLE", "CREATE TABLE IF NOT EXISTS", -1)
-		// 	} else if strings.Contains(s, "CREATE INDEX") {
-		// 		return strings.Replace(s, "CREATE INDEX", "CREATE INDEX IF NOT EXISTS", -1)
-		// 	} else {
-		// 		return s
-		// 	}
-		// })
-		// psql_pipe := pipes.Psql(mc_pipe, db_creds)
-		// pg_restore_schema_pipe := pipes.PG_Restore_Schema(mc_pipe, db_creds, schema, table)
 
 		exit_code := 0
 		mc_copy := pipes.McCopy(bucket_creds, fmt.Sprintf("%s%s/%s", s3path.Bucket, s3path.Key, dump_file_name))
@@ -64,38 +44,6 @@ func bucket_to_local_tables(
 
 		os.Remove(fmt.Sprintf("./pg_dump_tables/%s", dump_file_name))
 		logging.Logger.Printf("REMOVING FILE: %s", dump_file_name)
-		// func PG_dump_cleanup() {
-		// 	script.Exec("rm -r ./pg_dump_tables")
-		// }
-
-		// if strings.Contains(stdout, "ERR") {
-		// 	logging.Logger.Printf("S3TODB `mc` reported an error\n")
-		// 	logging.Logger.Println(stdout)
-		// 	exit_code = logging.PIPE_FAILURE
-		// }
-		// util.ErrorCheck(stdout, stderr)
-
-		// if mc_pipe.Error() != nil {
-		// 	logging.Logger.Println("S3TODB `dump | mc` pipe failed")
-		// 	exit_code = logging.PIPE_FAILURE
-		// }
-
-		//stdout, _ = psql_pipe.String()
-		// stdout, _ = pg_restore_schema_pipe.String()
-		// if strings.Contains(stdout, "ERR") {
-		// 	logging.Logger.Printf("PGRESTORESCHEMA reported an error\n")
-		// 	logging.Logger.Println(stdout)
-		// 	exit_code = logging.PIPE_FAILURE
-		// }
-
-		//pg_restore_data_pipe := pipes.PG_Restore_Data(mc_pipe, db_creds, schema, table)
-
-		// stdout, _ = pg_restore_data_pipe.String()
-		// if strings.Contains(stdout, "ERR") {
-		// 	logging.Logger.Printf("PGRESTOREDATA reported an error\n")
-		// 	logging.Logger.Println(stdout)
-		// 	exit_code = logging.PIPE_FAILURE
-		// }
 
 		if exit_code != 0 {
 			os.Exit(exit_code)
@@ -137,17 +85,6 @@ func bucket_to_cgov_tables(
 			os.Exit(exit_code)
 		}
 	}
-	// s3_pipe := pipes.S3Read(
-	// 	s3_creds,
-	// 	fmt.Sprintf("%s%s", s3path.Bucket, s3path.Key),
-	// )
-	// psql_pipe := pipes.Psql(s3_pipe, dest_db_creds)
-
-	// psql_pipe.Wait()
-	// if err := psql_pipe.Error(); err != nil {
-	// 	logging.Logger.Println("DUMPDBTOS3 `dump | mc` pipe failed")
-	// 	os.Exit(logging.PIPE_FAILURE)
-	// }
 }
 
 // S3toDBCmd represents the S3toDB command
