@@ -74,6 +74,9 @@ func LocalDatabaseSync(
 				fallthrough
 			case "restore":
 				truncate_tables(dest_db_creds, []string{table})
+			default:
+				logging.Logger.Printf("Correct operation not supplied. Please supply initial, backup, or restore")
+				os.Exit(-1)
 			}
 
 			psql_write := pipes.Psql(
@@ -109,6 +112,9 @@ func CgovDatabaseSync(
 				fallthrough
 			case "restore":
 				truncate_tables(dest_db_creds, []string{table})
+			default:
+				logging.Logger.Printf("Correct operation not supplied. Please supply initial, backup, or restore")
+				os.Exit(-1)
 			}
 
 			psql_write := pipes.Psql(
