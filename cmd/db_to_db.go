@@ -21,6 +21,7 @@ import (
 var (
 	source_db string
 	dest_db   string
+	operation string
 )
 
 func get_table_and_schema_names_db(source_creds vcap.Credentials) map[string]string {
@@ -57,7 +58,8 @@ func get_table_and_schema_names_db(source_creds vcap.Credentials) map[string]str
 func LocalDatabaseSync(
 	source_db_creds vcap.Credentials,
 	dest_db_creds vcap.Credentials,
-	table_names []string) {
+	table_names []string,
+	operation string) {
 	var BACKUP_ALL = len(table_names) == 0
 
 	logging.Logger.Println("DBTODB " + source_db_creds.Get("name").String() + " to " + dest_db_creds.Get("name").String() + " starting")
@@ -65,6 +67,15 @@ func LocalDatabaseSync(
 	//pg_dump -t table_to_copy source_db | psql target_db
 	for table, schema := range table_to_schema {
 		if slices.Contains(table_names, table) || BACKUP_ALL {
+			switch operation {
+			case "initial":
+				logging.Logger.Printf("Initial db2db operation, truncate not required")
+			case "backup":
+				fallthrough
+			case "restore":
+				truncate_tables(dest_db_creds, []string{table})
+			}
+
 			psql_write := pipes.Psql(
 				pipes.PG_Dump_Table(source_db_creds, schema, table),
 				dest_db_creds,
@@ -82,7 +93,8 @@ func LocalDatabaseSync(
 func CgovDatabaseSync(
 	source_db_creds vcap.Credentials,
 	dest_db_creds vcap.Credentials,
-	table_names []string) {
+	table_names []string,
+	operation string) {
 	var BACKUP_ALL = len(table_names) == 0
 
 	logging.Logger.Println("DBTODB " + source_db_creds.Get("name").String() + " to " + dest_db_creds.Get("name").String() + " starting")
@@ -90,6 +102,15 @@ func CgovDatabaseSync(
 	//pg_dump -t table_to_copy source_db | psql target_db
 	for table, schema := range table_to_schema {
 		if slices.Contains(table_names, table) || BACKUP_ALL {
+			switch operation {
+			case "initial":
+				logging.Logger.Printf("Initial db2db operation, truncate not required")
+			case "backup":
+				fallthrough
+			case "restore":
+				truncate_tables(dest_db_creds, []string{table})
+			}
+
 			psql_write := pipes.Psql(
 				pipes.PG_Dump_Table(source_db_creds, schema, table),
 				dest_db_creds,
@@ -117,10 +138,10 @@ var DbToDb = &cobra.Command{
 
 		ch := structs.Choice{
 			Local: func() {
-				LocalDatabaseSync(source_db_creds, dest_db_creds, table_names)
+				LocalDatabaseSync(source_db_creds, dest_db_creds, table_names, operation)
 			},
 			Remote: func() {
-				CgovDatabaseSync(source_db_creds, dest_db_creds, table_names)
+				CgovDatabaseSync(source_db_creds, dest_db_creds, table_names, operation)
 			}}
 		runLocalOrRemote(ch)
 
