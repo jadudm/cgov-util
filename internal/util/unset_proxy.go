@@ -9,7 +9,9 @@ import (
 
 func UnsetProxy() {
 	if slices.Contains([]string{"DEV", "PREVIEW", "STAGING", "PRODUCTION"}, os.Getenv("ENV")) {
-		logging.Logger.Println("Proxy:", os.Getenv("https_proxy"))
+		if IsDebugLevel("DEBUG") {
+			logging.Logger.Println("Proxy:", os.Getenv("https_proxy"))
+		}
 		logging.Logger.Printf("Unsetting https_proxy variable...")
 		os.Unsetenv("https_proxy")
 		logging.Logger.Println("DEBUG - Proxy after Unsetenv():", os.Getenv("https_proxy"))
