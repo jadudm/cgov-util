@@ -12,14 +12,15 @@ import (
 
 func PG_Dump_Table(creds vcap.Credentials,
 	schema string,
-	table string) *script.Pipe {
+	table string,
+	format string) *script.Pipe {
 	// Compose the command as a slice
 	cmd := []string{
 		util.PGDUMP_path,
 		"--no-password",
 		"--no-privileges",
 		"--no-owner",
-		"--format c",
+		format, // need plain for db_to_db
 		"--table",
 		fmt.Sprintf("%s.%s", schema, table),
 		"--dbname",

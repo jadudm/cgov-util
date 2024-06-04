@@ -77,7 +77,7 @@ func tables_to_local_bucket(
 		// 2. When there are no names in the list (backup all).
 		if slices.Contains(table_names, table) || BACKUP_ALL {
 			mc_pipe := pipes.McWrite(
-				pipes.PG_Dump_Table(source_creds, schema, table),
+				pipes.PG_Dump_Table(source_creds, schema, table, "--format c"),
 				up_creds,
 				fmt.Sprintf("%s%s/%s-%s.dump", s3path.Bucket, s3path.Key, schema, table),
 			)
@@ -102,7 +102,7 @@ func tables_to_cgov_bucket(
 	for table, schema := range table_to_schema {
 		if slices.Contains(table_names, table) || BACKUP_ALL {
 			s3_pipe := pipes.S3Write(
-				pipes.PG_Dump_Table(source_creds, schema, table),
+				pipes.PG_Dump_Table(source_creds, schema, table, "--format c"),
 				s3_creds,
 				fmt.Sprintf("%s%s/%s-%s.dump", s3path.Bucket, s3path.Key, schema, table),
 			)

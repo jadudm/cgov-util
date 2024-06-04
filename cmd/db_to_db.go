@@ -80,7 +80,7 @@ func LocalDatabaseSync(
 			}
 
 			psql_write := pipes.Psql(
-				pipes.PG_Dump_Table(source_db_creds, schema, table),
+				pipes.PG_Dump_Table(source_db_creds, schema, table, "--format plain"),
 				dest_db_creds,
 			)
 			psql_write.Wait()
@@ -118,7 +118,7 @@ func CgovDatabaseSync(
 			}
 
 			psql_write := pipes.Psql(
-				pipes.PG_Dump_Table(source_db_creds, schema, table),
+				pipes.PG_Dump_Table(source_db_creds, schema, table, "--format plain"),
 				dest_db_creds,
 			)
 			psql_write.Wait()
