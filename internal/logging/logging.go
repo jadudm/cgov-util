@@ -6,3 +6,4 @@ import (
 )
 
 var Logger = log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime)
+var Error = log.New(os.Stdout, "ERROR: ", log.Ldate|log.Ltime)
