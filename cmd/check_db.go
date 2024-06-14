@@ -29,6 +29,11 @@ func check_if_table_exists(source_creds vcap.Credentials) {
 		os.Exit(logging.DB_SCHEMA_SCAN_FAILURE)
 	}
 
+	////go:embed hello.txt
+	// var f embed.FS
+	// file, err := f.ReadFile("db_tables.txt")
+	// print(string(file))
+
 	file, err := os.Open("db_tables.txt")
 	if err != nil {
 		log.Fatal(err)
