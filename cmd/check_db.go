@@ -6,6 +6,7 @@ package cmd
 import (
 	"bufio"
 	"database/sql"
+	"embed"
 	"fmt"
 	"log"
 	"os"
@@ -18,10 +19,12 @@ import (
 
 var (
 	source_database string
+	//go:embed assets/db_tables.txt
+	f embed.FS
 )
 
 func check_if_table_exists(source_creds vcap.Credentials) {
-	//SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'schema_name' AND tablename  = 'table_name');
+	// SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'schema_name' AND tablename  = 'table_name');
 	db, err := sql.Open("postgres", source_creds.Get("uri").String())
 	if err != nil {
 		logging.Logger.Println("TABLECHECK could not connect to DB for checking table existance")
@@ -29,18 +32,20 @@ func check_if_table_exists(source_creds vcap.Credentials) {
 		os.Exit(logging.DB_SCHEMA_SCAN_FAILURE)
 	}
 
-	////go:embed hello.txt
-	// var f embed.FS
-	// file, err := f.ReadFile("db_tables.txt")
-	// print(string(file))
+	// file, err := os.Open("db_tables.txt")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+	// defer file.Close()
 
-	file, err := os.Open("db_tables.txt")
+	file, err := f.ReadFile("assets/db_tables.txt")
+	//print(string(file))
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(strings.NewReader(string(file)))
+	//scanner := bufio.NewScanner(file)
 	var not_existing []string
 	for scanner.Scan() {
 		//scanner.Text()
