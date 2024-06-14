@@ -39,7 +39,7 @@ func check_if_table_exists(source_creds vcap.Credentials) {
 	var not_existing []string
 	for scanner.Scan() {
 		//scanner.Text()
-		query := fmt.Sprintf("select * from %s ;", scanner.Text())
+		query := fmt.Sprintf("select * from %s LIMIT 1;", scanner.Text())
 		//query := fmt.Sprintf("SELECT EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename  = '%s')", scanner.Text())
 		rows, table_check := db.Query(query)
 
