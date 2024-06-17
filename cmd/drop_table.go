@@ -20,7 +20,7 @@ func drop_tables(db_creds vcap.Credentials, tables []string) {
 		for _, table := range tables {
 			logging.Logger.Printf("DROP dropping table %s\n", table)
 			drop_pipe := pipes.Psql(
-				script.Echo(fmt.Sprintf("DROP TABLE %s", table)),
+				script.Echo(fmt.Sprintf("DROP TABLE %s CASCADE", table)),
 				db_creds)
 			// If things failed completely, we'll see an error
 			err := drop_pipe.Error()
@@ -36,7 +36,11 @@ func drop_tables(db_creds vcap.Credentials, tables []string) {
 			if strings.Contains(stdout, "ERROR") {
 				logging.Logger.Printf("DROP drop table reported an error\n")
 				logging.Logger.Println(stdout)
-				os.Exit(logging.DB_DROP_ERROR)
+				if strings.Contains("does not exist", stdout) {
+					logging.Warning.Println("Table doesnt exist, skipping")
+				} else {
+					os.Exit(logging.DB_DROP_ERROR)
+				}
 			}
 		}
 	}
