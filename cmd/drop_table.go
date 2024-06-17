@@ -36,8 +36,8 @@ func drop_tables(db_creds vcap.Credentials, tables []string) {
 			if strings.Contains(stdout, "ERROR") {
 				logging.Logger.Printf("DROP drop table reported an error\n")
 				logging.Logger.Println(stdout)
-				if strings.Contains("does not exist", stdout) {
-					logging.Warning.Println("Table doesnt exist, skipping")
+				if strings.Contains(stdout, "does not exist") {
+					logging.Warning.Printf("Table '%s' doesnt exist, ignoring drop error..", table)
 				} else {
 					os.Exit(logging.DB_DROP_ERROR)
 				}

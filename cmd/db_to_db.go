@@ -70,7 +70,7 @@ func LocalDatabaseSync(
 		if slices.Contains(table_names, table) || BACKUP_ALL {
 
 			if dest_db == PROTECTED_DB {
-				logging.Logger.Printf("Protected Database %s found to be target database. Aborting...", PROTECTED_DB)
+				logging.Logger.Printf("Protected Database '%s' found to be target database. Aborting...", PROTECTED_DB)
 				os.Exit(logging.PROTECTED_DATABASE)
 			} else {
 				switch operation {
