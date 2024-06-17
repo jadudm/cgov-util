@@ -61,34 +61,40 @@ func LocalDatabaseSync(
 	table_names []string,
 	operation string) {
 	var BACKUP_ALL = len(table_names) == 0
+	var PROTECTED_DB = "fac-db"
 
 	logging.Logger.Println("DBTODB " + source_db_creds.Get("name").String() + " to " + dest_db_creds.Get("name").String() + " starting")
 	table_to_schema := get_table_and_schema_names_db(source_db_creds)
 	//pg_dump -t table_to_copy source_db | psql target_db
 	for table, schema := range table_to_schema {
 		if slices.Contains(table_names, table) || BACKUP_ALL {
-			switch operation {
-			case "initial":
-				logging.Logger.Printf("Initial db2db operation, truncate not required")
-			case "backup":
-				fallthrough
-			case "restore":
-				//truncate_tables(dest_db_creds, []string{table})
-				drop_tables(dest_db_creds, []string{table})
-			default:
-				logging.Logger.Printf("Correct operation not supplied. Please supply initial, backup, or restore")
-				os.Exit(-1)
-			}
 
-			psql_write := pipes.Psql(
-				pipes.PG_Dump_Table(source_db_creds, schema, table, "--format plain"),
-				dest_db_creds,
-			)
-			psql_write.Wait()
-			stdout, _ := psql_write.String()
-			if strings.Contains(stdout, "ERR") {
-				logging.Logger.Println("DBTODB " + source_db_creds.Get("name").String() + " to " + dest_db_creds.Get("name").String() + " pipe failed")
-				os.Exit(logging.PIPE_FAILURE)
+			if dest_db == PROTECTED_DB {
+				logging.Logger.Printf("Protected Database %s found to be target database. Aborting...", PROTECTED_DB)
+				os.Exit(logging.PROTECTED_DATABASE)
+			} else {
+				switch operation {
+				case "initial":
+					logging.Logger.Printf("Initial db2db operation, truncate not required")
+				case "backup":
+					fallthrough
+				case "restore":
+					//truncate_tables(dest_db_creds, []string{table})
+					drop_tables(dest_db_creds, []string{table})
+				default:
+					logging.Logger.Printf("Correct operation not supplied. Please supply initial, backup, or restore")
+					os.Exit(-1)
+				}
+				psql_write := pipes.Psql(
+					pipes.PG_Dump_Table(source_db_creds, schema, table, "--format plain"),
+					dest_db_creds,
+				)
+				psql_write.Wait()
+				stdout, _ := psql_write.String()
+				if strings.Contains(stdout, "ERR") {
+					logging.Logger.Println("DBTODB " + source_db_creds.Get("name").String() + " to " + dest_db_creds.Get("name").String() + " pipe failed")
+					os.Exit(logging.PIPE_FAILURE)
+				}
 			}
 		}
 	}
