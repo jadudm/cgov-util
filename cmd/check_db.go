@@ -71,7 +71,7 @@ func check_if_table_exists(source_creds vcap.Credentials) {
 		logging.Error.Printf("DBMISSINGTABLES " + joined_tables)
 		os.Exit(logging.DB_MISSING_TABLES)
 	} else {
-		logging.Logger.Printf("Manifest and Database tables appear to be in sync.")
+		logging.Status.Printf("Manifest and Database tables appear to be in sync.")
 	}
 
 	if err := scanner.Err(); err != nil {
