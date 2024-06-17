@@ -36,7 +36,7 @@ func parseFlags(cmd_name string, cmd *cobra.Command) {
 	case "s3_to_db":
 		fmt.Println("RUNNING S3_TO_DB FLAGS")
 		cmd.Flags().StringVarP(&s3_to_db_s3path, "s3path", "", "", "destination path")
-		cmd.Flags().StringVarP(&s3_to_db_db, "db", "", "", "source database name")
+		cmd.Flags().StringVarP(&s3_to_db_db, "db", "", "", "target database name")
 		cmd.MarkFlagRequired("db")
 		cmd.MarkFlagRequired("s3path")
 	case "db_to_s3":
