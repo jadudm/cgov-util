@@ -8,3 +8,6 @@ const PIPE_FAILURE = -30
 
 const DB_SCHEMA_SCAN_FAILURE = -40
 const DB_TRUNCATE_ERROR = -41
+const DB_DROP_ERROR = -42
+
+const DB_MISSING_TABLES = -50

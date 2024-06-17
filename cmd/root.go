@@ -57,6 +57,14 @@ func parseFlags(cmd_name string, cmd *cobra.Command) {
 		fmt.Println("RUNNING TRUNCATE FLAGS")
 		cmd.Flags().StringVarP(&truncate_db, "db", "", "", "target database name")
 		cmd.Flags().StringSliceVarP(&truncate_truncate, "truncate", "", []string{}, "tables to truncate before load")
+	case "drop":
+		fmt.Println("RUNNING DROP FLAGS")
+		cmd.Flags().StringVarP(&target_db, "db", "", "", "target database name")
+		cmd.Flags().StringSliceVarP(&drop, "drop", "", []string{}, "tables to drop before backup")
+	case "check_tables":
+		fmt.Println("RUNNING CHECK_TABLES FLAGS")
+		cmd.Flags().StringVarP(&source_database, "db", "", "", "database name")
+		cmd.MarkFlagRequired("source_database")
 	default:
 		fmt.Printf("NO FLAGS PROCESSED")
 	}

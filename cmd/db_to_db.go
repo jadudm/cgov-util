@@ -73,7 +73,8 @@ func LocalDatabaseSync(
 			case "backup":
 				fallthrough
 			case "restore":
-				truncate_tables(dest_db_creds, []string{table})
+				//truncate_tables(dest_db_creds, []string{table})
+				drop_tables(dest_db_creds, []string{table})
 			default:
 				logging.Logger.Printf("Correct operation not supplied. Please supply initial, backup, or restore")
 				os.Exit(-1)
