@@ -24,6 +24,7 @@ func bucket_to_local_tables(
 ) {
 	table_to_schema := get_table_and_schema_names(db_creds)
 	//fmt.Sprintf("%s%s/%s-%s.dump", s3path.Bucket, s3path.Key, schema, table)
+	check_if_table_exists(db_creds)
 	for table, schema := range table_to_schema {
 		dump_file_name := fmt.Sprintf("%s-%s.dump", schema, table)
 
