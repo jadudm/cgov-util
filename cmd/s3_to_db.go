@@ -22,6 +22,7 @@ func bucket_to_local_tables(
 	bucket_creds vcap.Credentials,
 	s3path *structs.S3Path,
 ) {
+	var PROTECTED_DB = "fac-db"
 	table_to_schema := get_table_and_schema_names(db_creds)
 	//fmt.Sprintf("%s%s/%s-%s.dump", s3path.Bucket, s3path.Key, schema, table)
 	check_if_table_exists(db_creds)
@@ -37,17 +38,23 @@ func bucket_to_local_tables(
 			exit_code = logging.PIPE_FAILURE
 		}
 
-		truncate_tables(db_creds, []string{table})
+		if s3_to_db_db == PROTECTED_DB {
+			logging.Logger.Printf("Protected Database '%s' found to be target database. Aborting...", PROTECTED_DB)
+			os.Exit(logging.PROTECTED_DATABASE)
+		} else {
+			//truncate_tables(db_creds, []string{table})
+			drop_tables(db_creds, []string{table})
 
-		pg_restore := pipes.PG_Restore(db_creds, schema, table)
-		restoreOut, restoreError := pg_restore.String()
-		util.ErrorCheck(restoreOut, restoreError)
+			pg_restore := pipes.PG_Restore(db_creds, schema, table)
+			restoreOut, restoreError := pg_restore.String()
+			util.ErrorCheck(restoreOut, restoreError)
 
-		os.Remove(fmt.Sprintf("./pg_dump_tables/%s", dump_file_name))
-		logging.Logger.Printf("REMOVING FILE: %s", dump_file_name)
+			os.Remove(fmt.Sprintf("./pg_dump_tables/%s", dump_file_name))
+			logging.Logger.Printf("REMOVING FILE: %s", dump_file_name)
 
-		if exit_code != 0 {
-			os.Exit(exit_code)
+			if exit_code != 0 {
+				os.Exit(exit_code)
+			}
 		}
 	}
 
@@ -59,6 +66,7 @@ func bucket_to_cgov_tables(
 	db_creds vcap.Credentials,
 	s3path *structs.S3Path,
 ) {
+	var PROTECTED_DB = "fac-db"
 	table_to_schema := get_table_and_schema_names(db_creds)
 	//fmt.Sprintf("%s%s/%s-%s.dump", s3path.Bucket, s3path.Key, schema, table)
 	for table, schema := range table_to_schema {
@@ -73,17 +81,23 @@ func bucket_to_cgov_tables(
 			exit_code = logging.PIPE_FAILURE
 		}
 
-		truncate_tables(db_creds, []string{table})
+		if s3_to_db_db == PROTECTED_DB {
+			logging.Logger.Printf("Protected Database '%s' found to be target database. Aborting...", PROTECTED_DB)
+			os.Exit(logging.PROTECTED_DATABASE)
+		} else {
+			//truncate_tables(db_creds, []string{table})
+			drop_tables(db_creds, []string{table})
 
-		pg_restore := pipes.PG_Restore(db_creds, schema, table)
-		restoreOut, restoreError := pg_restore.String()
-		util.ErrorCheck(restoreOut, restoreError)
-		logging.Logger.Printf("RESTORE of table %s complete.", table)
+			pg_restore := pipes.PG_Restore(db_creds, schema, table)
+			restoreOut, restoreError := pg_restore.String()
+			util.ErrorCheck(restoreOut, restoreError)
+			logging.Logger.Printf("RESTORE of table %s complete.", table)
 
-		os.Remove(fmt.Sprintf("./pg_dump_tables/%s", dump_file_name))
-		logging.Logger.Printf("REMOVING FILE: %s", dump_file_name)
-		if exit_code != 0 {
-			os.Exit(exit_code)
+			os.Remove(fmt.Sprintf("./pg_dump_tables/%s", dump_file_name))
+			logging.Logger.Printf("REMOVING FILE: %s", dump_file_name)
+			if exit_code != 0 {
+				os.Exit(exit_code)
+			}
 		}
 	}
 }
