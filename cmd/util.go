@@ -37,7 +37,7 @@ func runLocalOrRemote(funs structs.Choice) {
 		fallthrough
 	case "TESTING":
 		funs.Local()
-	case "DEV":
+	case "DEVELOPMENT":
 		fallthrough
 	case "STAGING":
 		fallthrough
