@@ -11,7 +11,24 @@
             "credentials": {
                 "access_key_id": "longtest",
                 "secret_access_key": "longtest",
-                "bucket": "gsa-fac-private-s3",
+                "bucket": "backups",
+                "endpoint": "http://127.0.0.1:9001",
+                "admin_username": "minioadmin",
+                "admin_password": "minioadmin"
+            }
+        },
+        {
+            "label": "mc",
+            "name": "fac-private-s3",
+            "tags": [],
+            "instance_guid": "UUIDALPHA1",
+            "instance_name": "fac-private-s3",
+            "binding_guid": "UUIDALPHA2",
+            "binding_name": null,
+            "credentials": {
+                "access_key_id": "longtest",
+                "secret_access_key": "longtest",
+                "bucket": "fac-private-s3",
                 "endpoint": "http://127.0.0.1:9001",
                 "admin_username": "minioadmin",
                 "admin_password": "minioadmin"
@@ -62,8 +79,8 @@
                 "host": "127.0.0.1",
                 "name": "postgres",
                 "password": "",
-                "port": "6543",
-                "uri": "postgres://postgres@127.0.0.10:6543/postgres?sslmode=disable",
+                "port": "5431",
+                "uri": "postgres://postgres@127.0.0.10:5431/postgres?sslmode=disable",
                 "username": "postgres"
             },
             "syslog_drain_url": null,

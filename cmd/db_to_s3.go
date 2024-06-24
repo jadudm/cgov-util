@@ -16,8 +16,14 @@ import (
 	"gov.gsa.fac.cgov-util/internal/logging"
 	"gov.gsa.fac.cgov-util/internal/pipes"
 	"gov.gsa.fac.cgov-util/internal/structs"
+	"gov.gsa.fac.cgov-util/internal/util"
 
 	"gov.gsa.fac.cgov-util/internal/vcap"
+)
+
+var (
+	db_to_s3_s3path string
+	db_to_s3_db     string
 )
 
 func get_table_and_schema_names(source_creds vcap.Credentials) map[string]string {
@@ -58,7 +64,7 @@ func tables_to_local_bucket(
 	table_names []string) {
 	var BACKUP_ALL = len(table_names) == 0
 
-	logging.Logger.Printf("DBTOS3 backing up from %s to %s/%s\n",
+	logging.Logger.Printf("DBTOS3 backing up from %s to %s%s\n",
 		source_creds.Get("name").String(),
 		s3path.Bucket,
 		s3path.Key,
@@ -71,7 +77,7 @@ func tables_to_local_bucket(
 		// 2. When there are no names in the list (backup all).
 		if slices.Contains(table_names, table) || BACKUP_ALL {
 			mc_pipe := pipes.McWrite(
-				pipes.PG_Dump_Table(source_creds, schema, table),
+				pipes.PG_Dump_Table(source_creds, schema, table, "--format c"),
 				up_creds,
 				fmt.Sprintf("%s%s/%s-%s.dump", s3path.Bucket, s3path.Key, schema, table),
 			)
@@ -96,7 +102,7 @@ func tables_to_cgov_bucket(
 	for table, schema := range table_to_schema {
 		if slices.Contains(table_names, table) || BACKUP_ALL {
 			s3_pipe := pipes.S3Write(
-				pipes.PG_Dump_Table(source_creds, schema, table),
+				pipes.PG_Dump_Table(source_creds, schema, table, "--format c"),
 				s3_creds,
 				fmt.Sprintf("%s%s/%s-%s.dump", s3path.Bucket, s3path.Key, schema, table),
 			)
@@ -119,45 +125,21 @@ Takes 0 or more table names as arguments. If no arguments are
 provided, all tables are backed up.
 	`,
 	Run: func(cmd *cobra.Command, table_names []string) {
+		util.UnsetProxy()
 		s3path := parseS3Path(db_to_s3_s3path)
+		db_creds := getDBCredentials(db_to_s3_db)
+		bucket_creds := getBucketCredentials(s3path)
 
-		// Check that we can get credentials.
-		db_creds, err := vcap.VCS.GetCredentials("aws-rds", db_to_s3_db)
-		if err != nil {
-			logging.Logger.Printf("DBTOS3 could not get DB credentials for %s", db_to_s3_db)
-			os.Exit(logging.COULD_NOT_FIND_CREDENTIALS)
-		}
-
-		switch os.Getenv("ENV") {
-		case "LOCAL":
-			fallthrough
-		case "TESTING":
-			up_creds, err := vcap.VCS.GetCredentials("user-provided", s3path.Bucket)
-			if err != nil {
-				logging.Logger.Printf("DBTOS3 could not get minio credentials")
-				os.Exit(logging.COULD_NOT_FIND_CREDENTIALS)
-			}
-			tables_to_local_bucket(db_creds, up_creds, s3path, table_names)
-		case "DEV":
-			fallthrough
-		case "STAGING":
-			fallthrough
-		case "PRODUCTION":
-			s3_creds, err := vcap.VCS.GetCredentials("s3", s3path.Bucket)
-			if err != nil {
-				logging.Logger.Printf("DBTOS3 could not get s3 credentials")
-				os.Exit(logging.COULD_NOT_FIND_CREDENTIALS)
-			}
-			tables_to_cgov_bucket(db_creds, s3_creds, s3path, table_names)
-
-		}
+		ch := structs.Choice{
+			Local: func() {
+				tables_to_local_bucket(db_creds, bucket_creds, s3path, table_names)
+			},
+			Remote: func() {
+				tables_to_cgov_bucket(db_creds, bucket_creds, s3path, table_names)
+			}}
+		runLocalOrRemote(ch)
 	},
 }
-
-var (
-	db_to_s3_s3path string
-	db_to_s3_db     string
-)
 
 func init() {
 	rootCmd.AddCommand(DbToS3Cmd)

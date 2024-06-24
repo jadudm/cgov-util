@@ -20,7 +20,7 @@ func truncate_tables(db_creds vcap.Credentials, tables []string) {
 		for _, table := range tables {
 			logging.Logger.Printf("TRUNCATE truncating table %s\n", table)
 			truncate_pipe := pipes.Psql(
-				script.Echo(fmt.Sprintf("TRUNCATE TABLE %s", table)),
+				script.Echo(fmt.Sprintf("TRUNCATE TABLE %s CASCADE", table)),
 				db_creds)
 			// If things failed completely, we'll see an error
 			err := truncate_pipe.Error()
